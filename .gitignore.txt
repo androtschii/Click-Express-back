@@ -1,0 +1,39 @@
+# Visual Studio
+.vs/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+bin/
+obj/
+packages/
+
+# Back-end specific
+back-end/bin/
+back-end/obj/
+back-end/Migrations/
+
+# Front-end (если добавите позже)
+front-end/node_modules/
+front-end/dist/
+front-end/build/
+
+# Database files
+*.mdf
+*.ldf
+
+# Environment files
+appsettings.Development.json
+appsettings.Production.json
+
+# User files
+*.user
+*.cache
+*.tmp
+*.lock.json
+
+# Git
+*.gitignore
