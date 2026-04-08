@@ -17,6 +17,7 @@ namespace back_end.Controllers
             _userService = userService;
         }
 
+        // User и Admin — просто [Authorize]
         [HttpGet]
         public IActionResult GetAll()
         {
@@ -31,7 +32,9 @@ namespace back_end.Controllers
             return Ok(user);
         }
 
+        // Только Admin
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public IActionResult Create([FromBody] CreateUserDto dto)
         {
             if (string.IsNullOrEmpty(dto.Username))
@@ -41,6 +44,7 @@ namespace back_end.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
         public IActionResult Update(int id, [FromBody] UpdateUserDto dto)
         {
             var updated = _userService.Update(id, dto);
@@ -49,6 +53,7 @@ namespace back_end.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public IActionResult Delete(int id)
         {
             if (!_userService.Delete(id))
