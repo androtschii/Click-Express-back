@@ -3,6 +3,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using back_end.DAL;
 
 namespace back_end.Controllers
 {
@@ -11,28 +12,31 @@ namespace back_end.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IConfiguration _config;
+        private readonly AppDbContext _db;
 
-        public AuthController(IConfiguration config)
+        public AuthController(IConfiguration config, AppDbContext db)
         {
             _config = config;
+            _db = db;
         }
 
         [HttpPost("login")]
         public IActionResult Login([FromBody] LoginRequest request)
         {
-            // Простая проверка (потом заменим на БД)
-            if (request.Username == "admin" && request.Password == "admin123")
-            {
-                var token = GenerateToken(request.Username, "Admin");
-                return Ok(new { token, username = request.Username, role = "Admin" });
-            }
-            if (request.Username == "user" && request.Password == "user123")
-            {
-                var token = GenerateToken(request.Username, "User");
-                return Ok(new { token, username = request.Username, role = "User" });
-            }
+            // Ищем пользователя в БД
+            var user = _db.Users.FirstOrDefault(u =>
+                u.Username == request.Username && u.IsActive);
 
-            return Unauthorized(new { message = "Неверный логин или пароль" });
+            if (user == null)
+                return Unauthorized(new { message = "Неверный логин или пароль" });
+
+            // Проверяем пароль через BCrypt
+            bool passwordOk = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
+            if (!passwordOk)
+                return Unauthorized(new { message = "Неверный логин или пароль" });
+
+            var token = GenerateToken(user.Username, user.Role);
+            return Ok(new { token, username = user.Username, role = user.Role });
         }
 
         private string GenerateToken(string username, string role)
