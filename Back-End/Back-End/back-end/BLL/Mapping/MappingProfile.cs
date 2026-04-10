@@ -9,11 +9,14 @@ namespace back_end.BLL.Mapping
         public MappingProfile()
         {
             CreateMap<User, UserDto>();
-            // Password не маппим автоматически — обрабатываем вручную в сервисе
             CreateMap<CreateUserDto, User>()
                 .ForMember(dest => dest.PasswordHash, opt => opt.Ignore());
             CreateMap<UpdateUserDto, User>()
                 .ForMember(dest => dest.PasswordHash, opt => opt.Ignore());
+
+            CreateMap<Product, ProductDto>();
+            CreateMap<CreateProductDto, Product>();
+            CreateMap<UpdateProductDto, Product>();
         }
     }
 }

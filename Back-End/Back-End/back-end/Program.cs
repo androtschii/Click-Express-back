@@ -21,7 +21,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Введите токен"
+        Description = "пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ"
     });
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
@@ -48,6 +48,7 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 // DAL
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
 // BLL
 builder.Services.AddScoped<IUserService, UserService>();
@@ -78,11 +79,11 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
-// Seed начальных пользователей
+
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate(); // применяет миграции автоматически
+    db.Database.Migrate(); 
 
     if (!db.Users.Any())
     {
