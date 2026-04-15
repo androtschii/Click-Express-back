@@ -9,7 +9,6 @@ namespace back_end.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
     public class ProductController : ControllerBase
     {
         private readonly IProductRepository _repo;
@@ -21,16 +20,16 @@ namespace back_end.Controllers
             _mapper = mapper;
         }
 
-       
         [HttpGet]
+        [AllowAnonymous]
         public IActionResult GetAll([FromQuery] string? search, [FromQuery] string? category)
         {
             var products = _repo.GetAll(search, category);
             return Ok(_mapper.Map<List<ProductDto>>(products));
         }
 
-        
         [HttpGet("{id}")]
+        [AllowAnonymous]
         public IActionResult GetById(int id)
         {
             var product = _repo.GetById(id);
