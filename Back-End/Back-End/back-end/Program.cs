@@ -52,6 +52,8 @@ builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
 // BLL
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IProductService, ProductService>();  
+
 
 // JWT
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
