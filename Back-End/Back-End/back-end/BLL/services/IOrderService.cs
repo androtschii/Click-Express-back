@@ -1,6 +1,4 @@
-﻿
-using back_end.BLL.DTOs;
-
+﻿using back_end.BLL.DTOs;
 namespace back_end.BLL.Services
 {
     public interface IOrderService
@@ -11,5 +9,6 @@ namespace back_end.BLL.Services
         OrderDto Create(int userId, CreateOrderDto dto);
         OrderDto? UpdateStatus(int id, string status);
         bool Delete(int id);
+        object GetStats();
     }
 }
