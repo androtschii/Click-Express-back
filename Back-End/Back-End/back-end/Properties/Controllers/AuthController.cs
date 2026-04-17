@@ -34,6 +34,8 @@ namespace back_end.Controllers
                 return Unauthorized(new { message = "Неверный логин или пароль" });
 
             var token = GenerateToken(user.Username, user.Role);
+            HttpContext.Session.SetString("username", user.Username);
+            HttpContext.Session.SetString("role", user.Role);
             return Ok(new { token, username = user.Username, role = user.Role });
         }
 
@@ -59,6 +61,8 @@ namespace back_end.Controllers
             _db.SaveChanges();
 
             var token = GenerateToken(user.Username, user.Role);
+            HttpContext.Session.SetString("username", user.Username);
+            HttpContext.Session.SetString("role", user.Role);
             return Ok(new { token, username = user.Username, role = user.Role });
         }
 

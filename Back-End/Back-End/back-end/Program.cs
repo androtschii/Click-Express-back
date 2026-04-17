@@ -81,6 +81,14 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromHours(8);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -125,6 +133,7 @@ if (app.Environment.IsDevelopment())
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
 app.UseCors();
+app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
