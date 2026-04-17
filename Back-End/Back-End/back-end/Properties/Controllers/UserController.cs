@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using back_end.BLL.DTOs;
 using back_end.BLL.Services;
-
 namespace back_end.Controllers
 {
     [Route("api/[controller]")]
@@ -11,19 +11,24 @@ namespace back_end.Controllers
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
-
         public UserController(IUserService userService)
         {
             _userService = userService;
         }
-
-        // User и Admin — просто [Authorize]
         [HttpGet]
         public IActionResult GetAll()
         {
             return Ok(_userService.GetAll());
         }
-
+        [HttpGet("profile")]
+        public IActionResult GetProfile()
+        {
+            var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            if (username == null) return Unauthorized();
+            var user = _userService.GetByUsername(username);
+            if (user == null) return NotFound(new { Message = "User not found" });
+            return Ok(user);
+        }
         [HttpGet("{id}")]
         public IActionResult GetById(int id)
         {
@@ -31,8 +36,6 @@ namespace back_end.Controllers
             if (user == null) return NotFound(new { Message = $"User {id} not found" });
             return Ok(user);
         }
-
-        // Только Admin
         [HttpPost]
         [Authorize(Roles = "Admin")]
         public IActionResult Create([FromBody] CreateUserDto dto)
@@ -42,7 +45,6 @@ namespace back_end.Controllers
             var created = _userService.Create(dto);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
-
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
         public IActionResult Update(int id, [FromBody] UpdateUserDto dto)
@@ -51,7 +53,6 @@ namespace back_end.Controllers
             if (updated == null) return NotFound(new { Message = $"User {id} not found" });
             return Ok(updated);
         }
-
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
         public IActionResult Delete(int id)
