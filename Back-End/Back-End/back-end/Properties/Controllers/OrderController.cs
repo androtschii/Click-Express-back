@@ -4,6 +4,7 @@ using System.Security.Claims;
 using back_end.BLL.DTOs;
 using back_end.BLL.Services;
 using back_end.DAL;
+using back_end.Filters;
 namespace back_end.Controllers
 {
     [Route("api/[controller]")]
@@ -50,6 +51,7 @@ namespace back_end.Controllers
         }
         [HttpPatch("{id}/status")]
         [Authorize(Roles = "Admin")]
+        [AdminActionFilter]
         public IActionResult UpdateStatus(int id, [FromBody] UpdateOrderStatusDto dto)
         {
             var updated = _orderService.UpdateStatus(id, dto.Status);
