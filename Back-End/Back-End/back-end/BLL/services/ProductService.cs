@@ -7,39 +7,63 @@ namespace back_end.BLL.Services
 {
     public class ProductService : IProductService
     {
-        private readonly IProductRepository _repo;
+        private readonly IProductRepository _repository;
         private readonly IMapper _mapper;
 
-        public ProductService(IProductRepository repo, IMapper mapper)
+        public ProductService(IProductRepository repository, IMapper mapper)
         {
-            _repo = repo;
+            _repository = repository;
             _mapper = mapper;
         }
 
-        public List<ProductDto> GetAll()
-          => _mapper.Map<List<ProductDto>>(_repo.GetAll(null, null));
+        public List<ProductDto> GetAll(string? search, string? category)
+            => _mapper.Map<List<ProductDto>>(_repository.GetAll(search, category));
 
         public ProductDto? GetById(int id)
         {
-            var product = _repo.GetById(id);
-            return product == null ? null : _mapper.Map<ProductDto>(product);
+            var p = _repository.GetById(id);
+            return p == null ? null : _mapper.Map<ProductDto>(p);
         }
 
-        public ProductDto Create(ProductDto dto)
+        public ProductDto Create(CreateProductDto dto)
         {
             var product = _mapper.Map<Product>(dto);
-            var created = _repo.Create(product);
-            return _mapper.Map<ProductDto>(created);
+            return _mapper.Map<ProductDto>(_repository.Create(product));
         }
 
-        public ProductDto? Update(int id, ProductDto dto)
+        public ProductDto? Update(int id, UpdateProductDto dto)
         {
             var product = _mapper.Map<Product>(dto);
-            var updated = _repo.Update(id, product);
+            var updated = _repository.Update(id, product);
             return updated == null ? null : _mapper.Map<ProductDto>(updated);
         }
 
-        public bool Delete(int id)
-            => _repo.Delete(id);
+        public bool Delete(int id) => _repository.Delete(id);
+
+        public ProductDto? UpdatePrice(int id, decimal price)
+        {
+            var updated = _repository.UpdatePrice(id, price);
+            return updated == null ? null : _mapper.Map<ProductDto>(updated);
+        }
+
+        public ProductDto? UpdateImage(int id, string imageUrl)
+        {
+            var updated = _repository.UpdateImage(id, imageUrl);
+            return updated == null ? null : _mapper.Map<ProductDto>(updated);
+        }
+
+        public ProductDto? ToggleActive(int id)
+        {
+            var updated = _repository.ToggleActive(id);
+            return updated == null ? null : _mapper.Map<ProductDto>(updated);
+        }
+
+        public ProductDto? UpdateStock(int id, int quantity)
+        {
+            var updated = _repository.UpdateStock(id, quantity);
+            return updated == null ? null : _mapper.Map<ProductDto>(updated);
+        }
+
+        public object GetStats() => _repository.GetStats();
     }
 }
