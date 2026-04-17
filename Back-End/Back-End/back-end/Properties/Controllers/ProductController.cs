@@ -4,7 +4,6 @@ using back_end.BLL.DTOs;
 using back_end.DAL.Repositories;
 using back_end.Domain;
 using AutoMapper;
-
 namespace back_end.Controllers
 {
     [Route("api/[controller]")]
@@ -13,21 +12,33 @@ namespace back_end.Controllers
     {
         private readonly IProductRepository _repo;
         private readonly IMapper _mapper;
-
         public ProductController(IProductRepository repo, IMapper mapper)
         {
             _repo = repo;
             _mapper = mapper;
         }
-
         [HttpGet]
         [AllowAnonymous]
-        public IActionResult GetAll([FromQuery] string? search, [FromQuery] string? category)
+        public IActionResult GetAll(
+            [FromQuery] string? search,
+            [FromQuery] string? category,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
         {
+            if (page < 1) page = 1;
+            if (pageSize < 1 || pageSize > 100) pageSize = 10;
             var products = _repo.GetAll(search, category);
-            return Ok(_mapper.Map<List<ProductDto>>(products));
+            var total = products.Count;
+            var items = products.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+            return Ok(new
+            {
+                Total = total,
+                Page = page,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling((double)total / pageSize),
+                Items = _mapper.Map<List<ProductDto>>(items)
+            });
         }
-
         [HttpGet("{id}")]
         [AllowAnonymous]
         public IActionResult GetById(int id)
@@ -36,8 +47,6 @@ namespace back_end.Controllers
             if (product == null) return NotFound(new { Message = $"Product {id} not found" });
             return Ok(_mapper.Map<ProductDto>(product));
         }
-
-      
         [HttpPost]
         [Authorize(Roles = "Admin")]
         public IActionResult Create([FromBody] CreateProductDto dto)
@@ -48,8 +57,6 @@ namespace back_end.Controllers
             var created = _repo.Create(product);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, _mapper.Map<ProductDto>(created));
         }
-
-      
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
         public IActionResult Update(int id, [FromBody] UpdateProductDto dto)
@@ -59,8 +66,6 @@ namespace back_end.Controllers
             if (updated == null) return NotFound(new { Message = $"Product {id} not found" });
             return Ok(_mapper.Map<ProductDto>(updated));
         }
-
-     
         [HttpPatch("{id}/price")]
         [Authorize(Roles = "Admin")]
         public IActionResult UpdatePrice(int id, [FromBody] UpdatePriceDto dto)
@@ -71,8 +76,6 @@ namespace back_end.Controllers
             if (updated == null) return NotFound(new { Message = $"Product {id} not found" });
             return Ok(_mapper.Map<ProductDto>(updated));
         }
-
-        
         [HttpPatch("{id}/image")]
         [Authorize(Roles = "Admin")]
         public IActionResult UpdateImage(int id, [FromBody] UpdateImageDto dto)
@@ -83,8 +86,6 @@ namespace back_end.Controllers
             if (updated == null) return NotFound(new { Message = $"Product {id} not found" });
             return Ok(_mapper.Map<ProductDto>(updated));
         }
-
-       
         [HttpPatch("{id}/toggle")]
         [Authorize(Roles = "Admin")]
         public IActionResult ToggleActive(int id)
@@ -98,8 +99,6 @@ namespace back_end.Controllers
                 Message = updated.IsActive ? "Товар активирован" : "Товар деактивирован"
             });
         }
-
-       
         [HttpPatch("{id}/stock")]
         [Authorize(Roles = "Admin")]
         public IActionResult UpdateStock(int id, [FromBody] UpdateStockDto dto)
@@ -110,15 +109,12 @@ namespace back_end.Controllers
             if (updated == null) return NotFound(new { Message = $"Product {id} not found" });
             return Ok(_mapper.Map<ProductDto>(updated));
         }
-
-       
         [HttpGet("stats")]
         [Authorize(Roles = "Admin")]
         public IActionResult GetStats()
         {
             return Ok(_repo.GetStats());
         }
-
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
         public IActionResult Delete(int id)
