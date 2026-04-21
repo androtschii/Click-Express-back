@@ -21,7 +21,7 @@ builder.Services.AddSwaggerGen(c =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "������� �����"
+       
     });
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
@@ -131,7 +131,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapGet("/", () => Results.Redirect("/swagger"));
-
+app.UseMiddleware<back_end.Middleware.ExceptionMiddleware>();
+    
 app.UseCors();
 app.UseSession();
 app.UseAuthentication();
