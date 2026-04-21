@@ -13,11 +13,13 @@ namespace back_end.Controllers
     {
         private readonly IConfiguration _config;
         private readonly AppDbContext _db;
+        private readonly ILogger<AuthController> _logger;
 
-        public AuthController(IConfiguration config, AppDbContext db)
+        public AuthController(IConfiguration config, AppDbContext db, ILogger<AuthController> logger)
         {
             _config = config;
             _db = db;
+            _logger = logger;
         }
 
         [HttpPost("login")]
@@ -27,15 +29,22 @@ namespace back_end.Controllers
                 u.Username == request.Username && u.IsActive);
 
             if (user == null)
+            {
+                _logger.LogWarning("Неудачная попытка входа: {Username}", request.Username);
                 return Unauthorized(new { message = "Неверный логин или пароль" });
+            }
 
             bool passwordOk = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
             if (!passwordOk)
+            {
+                _logger.LogWarning("Неверный пароль для {Username}", request.Username);
                 return Unauthorized(new { message = "Неверный логин или пароль" });
+            }
 
             var token = GenerateToken(user.Username, user.Role);
             HttpContext.Session.SetString("username", user.Username);
             HttpContext.Session.SetString("role", user.Role);
+            _logger.LogInformation("Пользователь {Username} вошёл в систему", user.Username);
             return Ok(new { token, username = user.Username, role = user.Role });
         }
 
@@ -63,6 +72,7 @@ namespace back_end.Controllers
             var token = GenerateToken(user.Username, user.Role);
             HttpContext.Session.SetString("username", user.Username);
             HttpContext.Session.SetString("role", user.Role);
+            _logger.LogInformation("Зарегистрирован новый пользователь: {Username}", user.Username);
             return Ok(new { token, username = user.Username, role = user.Role });
         }
 

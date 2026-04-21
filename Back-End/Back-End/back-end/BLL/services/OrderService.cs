@@ -2,16 +2,19 @@
 using back_end.BLL.DTOs;
 using back_end.DAL.Repositories;
 using back_end.Domain;
+using Microsoft.Extensions.Logging;
 namespace back_end.BLL.Services
 {
     public class OrderService : IOrderService
     {
         private readonly IOrderRepository _repository;
         private readonly IMapper _mapper;
-        public OrderService(IOrderRepository repository, IMapper mapper)
+        private readonly ILogger<OrderService> _logger;
+        public OrderService(IOrderRepository repository, IMapper mapper, ILogger<OrderService> logger)
         {
             _repository = repository;
             _mapper = mapper;
+            _logger = logger;
         }
         public List<OrderDto> GetAll()
             => _mapper.Map<List<OrderDto>>(_repository.GetAll());
@@ -32,14 +35,22 @@ namespace back_end.BLL.Services
                 Status = "Pending",
                 CreatedAt = DateTime.UtcNow
             };
-            return _mapper.Map<OrderDto>(_repository.Create(order));
+            var created = _repository.Create(order);
+            _logger.LogInformation("Order {Id} created for user {UserId}", created.Id, userId);
+            return _mapper.Map<OrderDto>(created);
         }
         public OrderDto? UpdateStatus(int id, string status)
         {
             var updated = _repository.UpdateStatus(id, status);
+            if (updated != null) _logger.LogInformation("Order {Id} status changed to {Status}", id, status);
             return updated == null ? null : _mapper.Map<OrderDto>(updated);
         }
-        public bool Delete(int id) => _repository.Delete(id);
+        public bool Delete(int id)
+        {
+            var result = _repository.Delete(id);
+            if (result) _logger.LogInformation("Order {Id} deleted", id);
+            return result;
+        }
         public object GetStats()
         {
             var orders = _repository.GetAll();

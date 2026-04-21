@@ -2,16 +2,19 @@
 using back_end.BLL.DTOs;
 using back_end.DAL.Repositories;
 using back_end.Domain;
+using Microsoft.Extensions.Logging;
 namespace back_end.BLL.Services
 {
     public class ProductService : IProductService
     {
         private readonly IProductRepository _repository;
         private readonly IMapper _mapper;
-        public ProductService(IProductRepository repository, IMapper mapper)
+        private readonly ILogger<ProductService> _logger;
+        public ProductService(IProductRepository repository, IMapper mapper, ILogger<ProductService> logger)
         {
             _repository = repository;
             _mapper = mapper;
+            _logger = logger;
         }
         public List<ProductDto> GetAll(string? search, string? category, int page = 1, int pageSize = 10)
         {
@@ -28,7 +31,9 @@ namespace back_end.BLL.Services
         public ProductDto Create(CreateProductDto dto)
         {
             var product = _mapper.Map<Product>(dto);
-            return _mapper.Map<ProductDto>(_repository.Create(product));
+            var created = _repository.Create(product);
+            _logger.LogInformation("Product {Id} created: {Name}", created.Id, created.Name);
+            return _mapper.Map<ProductDto>(created);
         }
         public ProductDto? Update(int id, UpdateProductDto dto)
         {
@@ -36,10 +41,16 @@ namespace back_end.BLL.Services
             var updated = _repository.Update(id, product);
             return updated == null ? null : _mapper.Map<ProductDto>(updated);
         }
-        public bool Delete(int id) => _repository.Delete(id);
+        public bool Delete(int id)
+        {
+            var result = _repository.Delete(id);
+            if (result) _logger.LogInformation("Product {Id} deleted", id);
+            return result;
+        }
         public ProductDto? UpdatePrice(int id, decimal price)
         {
             var updated = _repository.UpdatePrice(id, price);
+            if (updated != null) _logger.LogInformation("Product {Id} price updated to {Price}", id, price);
             return updated == null ? null : _mapper.Map<ProductDto>(updated);
         }
         public ProductDto? UpdateImage(int id, string imageUrl)
