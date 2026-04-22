@@ -5,12 +5,17 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using back_end.BLL.Mapping;
 using back_end.BLL.Services;
+using back_end.BLL.Validators;
 using back_end.DAL;
 using back_end.DAL.Repositories;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
