@@ -1,10 +1,9 @@
 ﻿using back_end.BLL.DTOs;
-
 namespace back_end.BLL.Services
 {
     public interface IProductService
     {
-        List<ProductDto> GetAll(string? search, string? category);
+        List<ProductDto> GetAll(string? search, string? category, int page = 1, int pageSize = 10);
         ProductDto? GetById(int id);
         ProductDto Create(CreateProductDto dto);
         ProductDto? Update(int id, UpdateProductDto dto);

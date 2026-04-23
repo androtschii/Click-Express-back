@@ -11,5 +11,9 @@ namespace back_end.Domain
         public string Role { get; set; } = "User"; // "Admin" или "User"
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public bool IsActive { get; set; } = true;
+
+        // refresh token
+        public string? RefreshToken { get; set; }
+        public DateTime? RefreshTokenExpiry { get; set; }
     }
 }
