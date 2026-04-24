@@ -10,8 +10,45 @@ namespace back_end.DAL
         public DbSet<User> Users { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<Order> Orders { get; set; }
+        public DbSet<OrderItem> OrderItems { get; set; }
+        public DbSet<Cart> Carts { get; set; }
+        public DbSet<CartItem> CartItems { get; set; }
+        public DbSet<Review> Reviews { get; set; }
+        public DbSet<Vehicle> Vehicles { get; set; }
+        public DbSet<NewsArticle> NewsArticles { get; set; }
+        public DbSet<JobApplication> JobApplications { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<OrderItem>()
+                .HasOne(oi => oi.Product)
+                .WithMany()
+                .HasForeignKey(oi => oi.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CartItem>()
+                .HasOne(ci => ci.Product)
+                .WithMany()
+                .HasForeignKey(ci => ci.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Review>()
+                .HasOne(r => r.Product)
+                .WithMany()
+                .HasForeignKey(r => r.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Review>()
+                .HasOne(r => r.User)
+                .WithMany()
+                .HasForeignKey(r => r.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<NewsArticle>()
+                .HasOne(n => n.Author)
+                .WithMany()
+                .HasForeignKey(n => n.AuthorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<Product>().HasData(
                 new Product { Id = 1, Name = "Colorado Springs → Tampa", Description = "Flatbed / Oversized Containers", Price = 4100m, ImageUrl = "/images/real9.jpg", Category = "Full Load", Stock = 1, IsActive = true, CreatedAt = new DateTime(2026, 1, 1) },
                 new Product { Id = 2, Name = "Madera → Fort Collins", Description = "Flatbed / HVAC Units", Price = 5120m, ImageUrl = "/images/real2.jpg", Category = "Full Load", Stock = 1, IsActive = true, CreatedAt = new DateTime(2026, 1, 1) },
