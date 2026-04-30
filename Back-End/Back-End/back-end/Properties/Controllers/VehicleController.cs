@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using AutoMapper;
+using back_end.BLL.DTOs;
 using back_end.DAL;
 using back_end.Domain;
 
@@ -10,10 +12,12 @@ namespace back_end.Controllers
     public class VehicleController : ControllerBase
     {
         private readonly AppDbContext _db;
+        private readonly IMapper _mapper;
 
-        public VehicleController(AppDbContext db)
+        public VehicleController(AppDbContext db, IMapper mapper)
         {
             _db = db;
+            _mapper = mapper;
         }
 
         [HttpGet]
@@ -23,7 +27,8 @@ namespace back_end.Controllers
             var query = _db.Vehicles.AsQueryable();
             if (!string.IsNullOrEmpty(type)) query = query.Where(v => v.Type == type);
             if (available.HasValue) query = query.Where(v => v.IsAvailable == available.Value);
-            return Ok(query.OrderBy(v => v.Model).ToList());
+            var items = query.OrderBy(v => v.Model).ToList();
+            return Ok(_mapper.Map<List<VehicleDto>>(items));
         }
 
         [HttpGet("{id}")]
@@ -32,37 +37,29 @@ namespace back_end.Controllers
         {
             var vehicle = _db.Vehicles.Find(id);
             if (vehicle == null) return NotFound(new { message = $"Vehicle {id} not found" });
-            return Ok(vehicle);
+            return Ok(_mapper.Map<VehicleDto>(vehicle));
         }
 
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public IActionResult Create([FromBody] Vehicle vehicle)
+        public IActionResult Create([FromBody] CreateVehicleDto dto)
         {
-            if (string.IsNullOrWhiteSpace(vehicle.Model) || string.IsNullOrWhiteSpace(vehicle.PlateNumber))
-                return BadRequest(new { message = "Model and PlateNumber are required" });
+            var vehicle = _mapper.Map<Vehicle>(dto);
             _db.Vehicles.Add(vehicle);
             _db.SaveChanges();
-            return CreatedAtAction(nameof(GetById), new { id = vehicle.Id }, vehicle);
+            return CreatedAtAction(nameof(GetById), new { id = vehicle.Id }, _mapper.Map<VehicleDto>(vehicle));
         }
 
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
-        public IActionResult Update(int id, [FromBody] Vehicle update)
+        public IActionResult Update(int id, [FromBody] UpdateVehicleDto dto)
         {
             var vehicle = _db.Vehicles.Find(id);
             if (vehicle == null) return NotFound(new { message = $"Vehicle {id} not found" });
 
-            vehicle.Model = update.Model;
-            vehicle.PlateNumber = update.PlateNumber;
-            vehicle.Type = update.Type;
-            vehicle.Capacity = update.Capacity;
-            vehicle.Year = update.Year;
-            vehicle.IsAvailable = update.IsAvailable;
-            vehicle.ImageUrl = update.ImageUrl;
-
+            _mapper.Map(dto, vehicle);
             _db.SaveChanges();
-            return Ok(vehicle);
+            return Ok(_mapper.Map<VehicleDto>(vehicle));
         }
 
         [HttpPatch("{id}/availability")]

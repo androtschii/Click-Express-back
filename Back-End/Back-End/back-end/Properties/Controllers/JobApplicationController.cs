@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using AutoMapper;
+using back_end.BLL.DTOs;
 using back_end.DAL;
 using back_end.Domain;
 
@@ -10,30 +12,19 @@ namespace back_end.Controllers
     public class JobApplicationController : ControllerBase
     {
         private readonly AppDbContext _db;
+        private readonly IMapper _mapper;
 
-        public JobApplicationController(AppDbContext db)
+        public JobApplicationController(AppDbContext db, IMapper mapper)
         {
             _db = db;
+            _mapper = mapper;
         }
 
         [HttpPost]
         [AllowAnonymous]
         public IActionResult Submit([FromBody] CreateJobApplicationDto dto)
         {
-            if (string.IsNullOrWhiteSpace(dto.FullName) || string.IsNullOrWhiteSpace(dto.Email))
-                return BadRequest(new { message = "FullName and Email are required" });
-            if (string.IsNullOrWhiteSpace(dto.Position))
-                return BadRequest(new { message = "Position is required" });
-
-            var application = new JobApplication
-            {
-                FullName = dto.FullName,
-                Email = dto.Email,
-                Phone = dto.Phone,
-                Position = dto.Position,
-                Message = dto.Message,
-                Status = "New"
-            };
+            var application = _mapper.Map<JobApplication>(dto);
             _db.JobApplications.Add(application);
             _db.SaveChanges();
             return Ok(new { application.Id, message = "Application submitted" });
@@ -45,7 +36,8 @@ namespace back_end.Controllers
         {
             var query = _db.JobApplications.AsQueryable();
             if (!string.IsNullOrEmpty(status)) query = query.Where(a => a.Status == status);
-            return Ok(query.OrderByDescending(a => a.CreatedAt).ToList());
+            var items = query.OrderByDescending(a => a.CreatedAt).ToList();
+            return Ok(_mapper.Map<List<JobApplicationDto>>(items));
         }
 
         [HttpGet("{id}")]
@@ -54,12 +46,12 @@ namespace back_end.Controllers
         {
             var application = _db.JobApplications.Find(id);
             if (application == null) return NotFound(new { message = $"Application {id} not found" });
-            return Ok(application);
+            return Ok(_mapper.Map<JobApplicationDto>(application));
         }
 
         [HttpPatch("{id}/status")]
         [Authorize(Roles = "Admin")]
-        public IActionResult UpdateStatus(int id, [FromBody] UpdateStatusDto dto)
+        public IActionResult UpdateStatus(int id, [FromBody] UpdateJobApplicationStatusDto dto)
         {
             var application = _db.JobApplications.Find(id);
             if (application == null) return NotFound(new { message = $"Application {id} not found" });
@@ -78,19 +70,5 @@ namespace back_end.Controllers
             _db.SaveChanges();
             return NoContent();
         }
-    }
-
-    public class CreateJobApplicationDto
-    {
-        public string FullName { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-        public string Phone { get; set; } = string.Empty;
-        public string Position { get; set; } = string.Empty;
-        public string Message { get; set; } = string.Empty;
-    }
-
-    public class UpdateStatusDto
-    {
-        public string Status { get; set; } = string.Empty;
     }
 }
