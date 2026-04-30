@@ -12,10 +12,12 @@ namespace back_end.Controllers
     public class NewsController : ControllerBase
     {
         private readonly AppDbContext _db;
+        private readonly ILogger<NewsController> _logger;
 
-        public NewsController(AppDbContext db)
+        public NewsController(AppDbContext db, ILogger<NewsController> logger)
         {
             _db = db;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -79,6 +81,7 @@ namespace back_end.Controllers
             };
             _db.NewsArticles.Add(article);
             _db.SaveChanges();
+            _logger.LogInformation("Admin {Admin} published news article {ArticleId} ({Title})", username, article.Id, article.Title);
             return CreatedAtAction(nameof(GetById), new { id = article.Id }, new { article.Id });
         }
 
@@ -94,6 +97,8 @@ namespace back_end.Controllers
             article.ImageUrl = dto.ImageUrl;
             article.IsPublished = dto.IsPublished;
             _db.SaveChanges();
+            var admin = User.FindFirst(ClaimTypes.Name)?.Value;
+            _logger.LogInformation("Admin {Admin} updated news article {ArticleId}", admin, id);
             return Ok(new { article.Id });
         }
 
@@ -105,6 +110,8 @@ namespace back_end.Controllers
             if (article == null) return NotFound(new { message = $"Article {id} not found" });
             _db.NewsArticles.Remove(article);
             _db.SaveChanges();
+            var admin = User.FindFirst(ClaimTypes.Name)?.Value;
+            _logger.LogWarning("Admin {Admin} deleted news article {ArticleId}", admin, id);
             return NoContent();
         }
     }

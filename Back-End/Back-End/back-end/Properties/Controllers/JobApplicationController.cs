@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using AutoMapper;
 using back_end.BLL.DTOs;
 using back_end.DAL;
@@ -13,11 +14,13 @@ namespace back_end.Controllers
     {
         private readonly AppDbContext _db;
         private readonly IMapper _mapper;
+        private readonly ILogger<JobApplicationController> _logger;
 
-        public JobApplicationController(AppDbContext db, IMapper mapper)
+        public JobApplicationController(AppDbContext db, IMapper mapper, ILogger<JobApplicationController> logger)
         {
             _db = db;
             _mapper = mapper;
+            _logger = logger;
         }
 
         [HttpPost]
@@ -57,6 +60,8 @@ namespace back_end.Controllers
             if (application == null) return NotFound(new { message = $"Application {id} not found" });
             application.Status = dto.Status;
             _db.SaveChanges();
+            var admin = User.FindFirst(ClaimTypes.Name)?.Value;
+            _logger.LogInformation("Admin {Admin} changed application {AppId} status to {Status}", admin, id, dto.Status);
             return Ok(new { application.Id, application.Status });
         }
 
@@ -68,6 +73,8 @@ namespace back_end.Controllers
             if (application == null) return NotFound(new { message = $"Application {id} not found" });
             _db.JobApplications.Remove(application);
             _db.SaveChanges();
+            var admin = User.FindFirst(ClaimTypes.Name)?.Value;
+            _logger.LogWarning("Admin {Admin} deleted application {AppId}", admin, id);
             return NoContent();
         }
     }

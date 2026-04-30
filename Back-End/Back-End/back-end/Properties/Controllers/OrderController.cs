@@ -14,10 +14,12 @@ namespace back_end.Controllers
     {
         private readonly IOrderService _orderService;
         private readonly AppDbContext _db;
-        public OrderController(IOrderService orderService, AppDbContext db)
+        private readonly ILogger<OrderController> _logger;
+        public OrderController(IOrderService orderService, AppDbContext db, ILogger<OrderController> logger)
         {
             _orderService = orderService;
             _db = db;
+            _logger = logger;
         }
         [HttpGet]
         [Authorize(Roles = "Admin")]
@@ -56,6 +58,8 @@ namespace back_end.Controllers
         {
             var updated = _orderService.UpdateStatus(id, dto.Status);
             if (updated == null) return NotFound(new { Message = $"Order {id} not found" });
+            var admin = User.FindFirst(ClaimTypes.Name)?.Value;
+            _logger.LogInformation("Admin {Admin} changed order {OrderId} status to {Status}", admin, id, dto.Status);
             return Ok(updated);
         }
         [HttpDelete("{id}")]
@@ -64,6 +68,8 @@ namespace back_end.Controllers
         {
             if (!_orderService.Delete(id))
                 return NotFound(new { Message = $"Order {id} not found" });
+            var admin = User.FindFirst(ClaimTypes.Name)?.Value;
+            _logger.LogWarning("Admin {Admin} deleted order {OrderId}", admin, id);
             return NoContent();
         }
     }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 using back_end.BLL.DTOs;
 using back_end.DAL.Repositories;
 using back_end.Domain;
@@ -12,10 +13,12 @@ namespace back_end.Controllers
     {
         private readonly IProductRepository _repo;
         private readonly IMapper _mapper;
-        public ProductController(IProductRepository repo, IMapper mapper)
+        private readonly ILogger<ProductController> _logger;
+        public ProductController(IProductRepository repo, IMapper mapper, ILogger<ProductController> logger)
         {
             _repo = repo;
             _mapper = mapper;
+            _logger = logger;
         }
         [HttpGet]
         [AllowAnonymous]
@@ -55,6 +58,8 @@ namespace back_end.Controllers
                 return BadRequest(new { Message = "Name is required" });
             var product = _mapper.Map<Product>(dto);
             var created = _repo.Create(product);
+            var admin = User.FindFirst(ClaimTypes.Name)?.Value;
+            _logger.LogInformation("Admin {Admin} created product {ProductId} ({Name})", admin, created.Id, created.Name);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, _mapper.Map<ProductDto>(created));
         }
         [HttpPut("{id}")]
@@ -121,6 +126,8 @@ namespace back_end.Controllers
         {
             if (!_repo.Delete(id))
                 return NotFound(new { Message = $"Product {id} not found" });
+            var admin = User.FindFirst(ClaimTypes.Name)?.Value;
+            _logger.LogWarning("Admin {Admin} deleted product {ProductId}", admin, id);
             return NoContent();
         }
     }

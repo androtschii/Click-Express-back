@@ -12,10 +12,12 @@ namespace back_end.Controllers
     public class ReviewController : ControllerBase
     {
         private readonly AppDbContext _db;
+        private readonly ILogger<ReviewController> _logger;
 
-        public ReviewController(AppDbContext db)
+        public ReviewController(AppDbContext db, ILogger<ReviewController> logger)
         {
             _db = db;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -92,6 +94,8 @@ namespace back_end.Controllers
             if (review == null) return NotFound(new { message = $"Review {id} not found" });
             review.IsApproved = true;
             _db.SaveChanges();
+            var admin = User.FindFirst(ClaimTypes.Name)?.Value;
+            _logger.LogInformation("Admin {Admin} approved review {ReviewId}", admin, id);
             return Ok(new { review.Id, review.IsApproved });
         }
 
@@ -111,6 +115,7 @@ namespace back_end.Controllers
 
             _db.Reviews.Remove(review);
             _db.SaveChanges();
+            _logger.LogWarning("{Role} {Username} deleted review {ReviewId}", role, username, id);
             return NoContent();
         }
     }
