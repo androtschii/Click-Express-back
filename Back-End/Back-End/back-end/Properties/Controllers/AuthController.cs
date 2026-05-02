@@ -105,6 +105,52 @@ namespace back_end.Controllers
             return Ok(new { message = "Вы вышли" });
         }
 
+        [HttpPost("forgot-password")]
+        public IActionResult ForgotPassword([FromBody] ForgotPasswordRequest req)
+        {
+            var user = _db.Users.FirstOrDefault(u => u.Email == req.Email && u.IsActive);
+            if (user != null)
+            {
+                var token = GenerateRefreshToken();
+                user.PasswordResetToken = token;
+                user.PasswordResetTokenExpiry = DateTime.Now.AddHours(1);
+                _db.SaveChanges();
+                _logger.LogInformation("Password reset requested for {Email}, token: {Token}", req.Email, token);
+            }
+            else
+            {
+                _logger.LogInformation("Password reset requested for unknown email {Email}", req.Email);
+            }
+            return Ok(new { message = "Если email зарегистрирован, на него отправлена ссылка для сброса пароля" });
+        }
+
+        [HttpPost("reset-password")]
+        public IActionResult ResetPassword([FromBody] ResetPasswordRequest req)
+        {
+            if (string.IsNullOrWhiteSpace(req.Token) || string.IsNullOrWhiteSpace(req.NewPassword))
+                return BadRequest(new { message = "Токен и пароль обязательны" });
+
+            if (req.NewPassword.Length < 6)
+                return BadRequest(new { message = "Пароль должен быть не короче 6 символов" });
+
+            var user = _db.Users.FirstOrDefault(u => u.PasswordResetToken == req.Token);
+            if (user == null || user.PasswordResetTokenExpiry == null || user.PasswordResetTokenExpiry < DateTime.Now)
+            {
+                _logger.LogWarning("Невалидный или истёкший токен сброса пароля");
+                return BadRequest(new { message = "Ссылка недействительна или истекла" });
+            }
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(req.NewPassword);
+            user.PasswordResetToken = null;
+            user.PasswordResetTokenExpiry = null;
+            user.RefreshToken = null;
+            user.RefreshTokenExpiry = null;
+            _db.SaveChanges();
+
+            _logger.LogInformation("Пароль сброшен для {Username}", user.Username);
+            return Ok(new { message = "Пароль обновлён" });
+        }
+
         [HttpPost("register")]
         public IActionResult Register([FromBody] RegisterRequest request)
         {
@@ -186,5 +232,16 @@ namespace back_end.Controllers
     public class RefreshRequest
     {
         public string RefreshToken { get; set; } = "";
+    }
+
+    public class ForgotPasswordRequest
+    {
+        public string Email { get; set; } = "";
+    }
+
+    public class ResetPasswordRequest
+    {
+        public string Token { get; set; } = "";
+        public string NewPassword { get; set; } = "";
     }
 }
