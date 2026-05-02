@@ -29,6 +29,15 @@ namespace back_end.Controllers
             if (user == null) return NotFound(new { Message = "User not found" });
             return Ok(user);
         }
+        [HttpPut("profile")]
+        public IActionResult UpdateProfile([FromBody] UpdateProfileDto dto)
+        {
+            var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            if (username == null) return Unauthorized();
+            var updated = _userService.UpdateProfile(username, dto);
+            if (updated == null) return NotFound(new { Message = "User not found" });
+            return Ok(updated);
+        }
         [HttpGet("{id}")]
         public IActionResult GetById(int id)
         {

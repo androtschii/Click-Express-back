@@ -12,6 +12,12 @@ namespace back_end.Domain
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public bool IsActive { get; set; } = true;
 
+        // profile
+        public string? FullName { get; set; }
+        public string? Phone { get; set; }
+        public string? Company { get; set; }
+        public string? Address { get; set; }
+
         // refresh token
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiry { get; set; }

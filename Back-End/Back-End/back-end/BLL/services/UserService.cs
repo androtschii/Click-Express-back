@@ -48,6 +48,21 @@ namespace back_end.BLL.Services
             if (updated != null) _logger.LogInformation("User {Id} updated", id);
             return updated == null ? null : _mapper.Map<UserDto>(updated);
         }
+        public UserDto? UpdateProfile(string username, UpdateProfileDto dto)
+        {
+            var user = _repository.GetAll().FirstOrDefault(u => u.Username == username);
+            if (user == null) return null;
+
+            if (dto.FullName != null) user.FullName = dto.FullName;
+            if (dto.Phone    != null) user.Phone    = dto.Phone;
+            if (dto.Company  != null) user.Company  = dto.Company;
+            if (dto.Address  != null) user.Address  = dto.Address;
+            if (dto.Email    != null) user.Email    = dto.Email;
+
+            _repository.SaveProfile(user);
+            _logger.LogInformation("User {Username} updated profile", username);
+            return _mapper.Map<UserDto>(user);
+        }
         public bool Delete(int id)
         {
             var result = _repository.Delete(id);

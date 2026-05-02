@@ -36,6 +36,12 @@ namespace back_end.DAL.Repositories
             return user;
         }
 
+        public void SaveProfile(User user)
+        {
+            _context.Users.Update(user);
+            _context.SaveChanges();
+        }
+
         public bool Delete(int id)
         {
             var user = _context.Users.FirstOrDefault(u => u.Id == id);
