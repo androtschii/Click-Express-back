@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using back_end.BLL.Services;
 using back_end.DAL;
 
 namespace back_end.Controllers
@@ -14,13 +16,28 @@ namespace back_end.Controllers
     {
         private readonly IConfiguration _config;
         private readonly AppDbContext _db;
+        private readonly IUserService _userService;
         private readonly ILogger<AuthController> _logger;
 
-        public AuthController(IConfiguration config, AppDbContext db, ILogger<AuthController> logger)
+        public AuthController(IConfiguration config, AppDbContext db, IUserService userService, ILogger<AuthController> logger)
         {
             _config = config;
             _db = db;
+            _userService = userService;
             _logger = logger;
+        }
+
+        [HttpGet("me")]
+        [Authorize]
+        public IActionResult Me()
+        {
+            var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            if (string.IsNullOrEmpty(username)) return Unauthorized();
+
+            var user = _userService.GetByUsername(username);
+            if (user == null) return Unauthorized();
+
+            return Ok(user);
         }
 
         [HttpPost("login")]
