@@ -17,6 +17,7 @@ namespace back_end.DAL
         public DbSet<Vehicle> Vehicles { get; set; }
         public DbSet<NewsArticle> NewsArticles { get; set; }
         public DbSet<JobApplication> JobApplications { get; set; }
+        public DbSet<Lead> Leads { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<OrderItem>()

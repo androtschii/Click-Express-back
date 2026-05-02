@@ -27,6 +27,10 @@ namespace back_end.BLL.Mapping
             CreateMap<JobApplication, JobApplicationDto>();
             CreateMap<CreateJobApplicationDto, JobApplication>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => "New"));
+
+            CreateMap<Lead, LeadDto>();
+            CreateMap<CreateLeadDto, Lead>()
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => "New"));
         }
     }
 }
