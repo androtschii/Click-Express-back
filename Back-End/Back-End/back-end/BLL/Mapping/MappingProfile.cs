@@ -31,6 +31,13 @@ namespace back_end.BLL.Mapping
             CreateMap<Lead, LeadDto>();
             CreateMap<CreateLeadDto, Lead>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => "New"));
+
+            CreateMap<SavedLoad, SavedLoadDto>()
+                .ForMember(dest => dest.ProductName,        opt => opt.MapFrom(src => src.Product.Name))
+                .ForMember(dest => dest.ProductPrice,       opt => opt.MapFrom(src => src.Product.Price))
+                .ForMember(dest => dest.ProductImageUrl,    opt => opt.MapFrom(src => src.Product.ImageUrl))
+                .ForMember(dest => dest.ProductCategory,    opt => opt.MapFrom(src => src.Product.Category))
+                .ForMember(dest => dest.ProductDescription, opt => opt.MapFrom(src => src.Product.Description));
         }
     }
 }
