@@ -49,8 +49,18 @@ namespace back_end.BLL.Services
         public OrderDto? UpdateStatus(int id, string status)
         {
             var updated = _repository.UpdateStatus(id, status);
-            if (updated != null) _logger.LogInformation("Order {Id} status changed to {Status}", id, status);
-            return updated == null ? null : _mapper.Map<OrderDto>(updated);
+            if (updated == null) return null;
+
+            _repository.AddHistory(new OrderStatusHistory
+            {
+                OrderId = id,
+                Status = status,
+                Timestamp = DateTime.UtcNow,
+                Location = updated.CurrentLocation,
+            });
+
+            _logger.LogInformation("Order {Id} status changed to {Status}", id, status);
+            return _mapper.Map<OrderDto>(updated);
         }
 
         public OrderDto? Update(int id, UpdateOrderDto dto)
@@ -71,6 +81,9 @@ namespace back_end.BLL.Services
             if (updated != null) _logger.LogInformation("Order {Id} updated", id);
             return updated == null ? null : _mapper.Map<OrderDto>(updated);
         }
+        public List<OrderStatusHistoryDto> GetTracking(int orderId)
+            => _mapper.Map<List<OrderStatusHistoryDto>>(_repository.GetHistory(orderId));
+
         public bool Delete(int id)
         {
             var result = _repository.Delete(id);

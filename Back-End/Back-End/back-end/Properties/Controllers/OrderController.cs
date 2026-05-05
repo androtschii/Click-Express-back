@@ -51,6 +51,14 @@ namespace back_end.Controllers
             var created = _orderService.Create(user.Id, dto);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
+        [HttpGet("{id}/tracking")]
+        public IActionResult GetTracking(int id)
+        {
+            var order = _orderService.GetById(id);
+            if (order == null) return NotFound(new { Message = $"Order {id} not found" });
+            return Ok(_orderService.GetTracking(id));
+        }
+
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
         public IActionResult Update(int id, [FromBody] UpdateOrderDto dto)

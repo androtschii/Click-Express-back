@@ -11,5 +11,6 @@ namespace back_end.BLL.Services
         OrderDto? Update(int id, UpdateOrderDto dto);
         bool Delete(int id);
         object GetStats();
+        List<OrderStatusHistoryDto> GetTracking(int orderId);
     }
 }

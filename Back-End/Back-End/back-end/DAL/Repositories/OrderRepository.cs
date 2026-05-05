@@ -54,5 +54,18 @@ namespace back_end.DAL.Repositories
             _db.SaveChanges();
             return true;
         }
+
+        public List<OrderStatusHistory> GetHistory(int orderId)
+            => _db.OrderStatusHistories
+                .Where(h => h.OrderId == orderId)
+                .OrderBy(h => h.Timestamp)
+                .ToList();
+
+        public OrderStatusHistory AddHistory(OrderStatusHistory entry)
+        {
+            _db.OrderStatusHistories.Add(entry);
+            _db.SaveChanges();
+            return entry;
+        }
     }
 }

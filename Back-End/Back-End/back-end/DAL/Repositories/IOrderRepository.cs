@@ -11,5 +11,7 @@ namespace back_end.DAL.Repositories
         Order? UpdateStatus(int id, string status);
         Order? Update(int id, Action<Order> apply);
         bool Delete(int id);
+        List<OrderStatusHistory> GetHistory(int orderId);
+        OrderStatusHistory AddHistory(OrderStatusHistory entry);
     }
 }

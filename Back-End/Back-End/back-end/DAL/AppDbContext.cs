@@ -20,6 +20,7 @@ namespace back_end.DAL
         public DbSet<Lead> Leads { get; set; }
         public DbSet<SavedLoad> SavedLoads { get; set; }
         public DbSet<Driver> Drivers { get; set; }
+        public DbSet<OrderStatusHistory> OrderStatusHistories { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<OrderItem>()
@@ -85,6 +86,12 @@ namespace back_end.DAL
                 .WithMany()
                 .HasForeignKey(o => o.DriverId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<OrderStatusHistory>()
+                .HasOne(h => h.Order)
+                .WithMany()
+                .HasForeignKey(h => h.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Product>().HasData(
                 new Product { Id = 1, Name = "Colorado Springs → Tampa", Description = "Flatbed / Oversized Containers", Price = 4100m, ImageUrl = "/images/real9.jpg", Category = "Full Load", Stock = 1, IsActive = true, CreatedAt = new DateTime(2026, 1, 1) },

@@ -34,6 +34,8 @@ namespace back_end.BLL.Mapping
             CreateMap<CreateLeadDto, Lead>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => "New"));
 
+            CreateMap<OrderStatusHistory, OrderStatusHistoryDto>();
+
             CreateMap<Driver, DriverDto>()
                 .ForMember(dest => dest.VehicleModel, opt => opt.MapFrom(src => src.Vehicle != null ? src.Vehicle.Model : null));
             CreateMap<CreateDriverDto, Driver>();
