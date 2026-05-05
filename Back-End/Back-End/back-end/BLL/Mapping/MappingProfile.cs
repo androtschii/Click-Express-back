@@ -18,7 +18,9 @@ namespace back_end.BLL.Mapping
             CreateMap<CreateProductDto, Product>();
             CreateMap<UpdateProductDto, Product>();
             CreateMap<Order, OrderDto>()
-                  .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name));
+                .ForMember(dest => dest.ProductName,  opt => opt.MapFrom(src => src.Product.Name))
+                .ForMember(dest => dest.VehicleModel, opt => opt.MapFrom(src => src.Vehicle != null ? src.Vehicle.Model : null))
+                .ForMember(dest => dest.DriverName,   opt => opt.MapFrom(src => src.Driver != null ? src.Driver.FullName : null));
 
             CreateMap<Vehicle, VehicleDto>();
             CreateMap<CreateVehicleDto, Vehicle>();

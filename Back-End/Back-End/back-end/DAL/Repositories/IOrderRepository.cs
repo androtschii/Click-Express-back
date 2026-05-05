@@ -9,6 +9,7 @@ namespace back_end.DAL.Repositories
         Order? GetById(int id);
         Order Create(Order order);
         Order? UpdateStatus(int id, string status);
+        Order? Update(int id, Action<Order> apply);
         bool Delete(int id);
     }
 }

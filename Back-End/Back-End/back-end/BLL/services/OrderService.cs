@@ -33,7 +33,14 @@ namespace back_end.BLL.Services
                 ProductId = dto.ProductId,
                 Notes = dto.Notes,
                 Status = "Pending",
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                PickupAddress = dto.PickupAddress,
+                DeliveryAddress = dto.DeliveryAddress,
+                PickupDate = dto.PickupDate,
+                DeliveryDate = dto.DeliveryDate,
+                VehicleId = dto.VehicleId,
+                DriverId = dto.DriverId,
+                TotalPrice = dto.TotalPrice,
             };
             var created = _repository.Create(order);
             _logger.LogInformation("Order {Id} created for user {UserId}", created.Id, userId);
@@ -43,6 +50,25 @@ namespace back_end.BLL.Services
         {
             var updated = _repository.UpdateStatus(id, status);
             if (updated != null) _logger.LogInformation("Order {Id} status changed to {Status}", id, status);
+            return updated == null ? null : _mapper.Map<OrderDto>(updated);
+        }
+
+        public OrderDto? Update(int id, UpdateOrderDto dto)
+        {
+            var updated = _repository.Update(id, o =>
+            {
+                o.Notes = dto.Notes;
+                o.PickupAddress = dto.PickupAddress;
+                o.DeliveryAddress = dto.DeliveryAddress;
+                o.PickupDate = dto.PickupDate;
+                o.DeliveryDate = dto.DeliveryDate;
+                o.VehicleId = dto.VehicleId;
+                o.DriverId = dto.DriverId;
+                o.TotalPrice = dto.TotalPrice;
+                o.CurrentLocation = dto.CurrentLocation;
+                o.EstimatedArrival = dto.EstimatedArrival;
+            });
+            if (updated != null) _logger.LogInformation("Order {Id} updated", id);
             return updated == null ? null : _mapper.Map<OrderDto>(updated);
         }
         public bool Delete(int id)

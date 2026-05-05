@@ -11,6 +11,18 @@ namespace back_end.BLL.DTOs
         public string Status { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public string? Notes { get; set; }
+
+        public string? PickupAddress { get; set; }
+        public string? DeliveryAddress { get; set; }
+        public DateTime? PickupDate { get; set; }
+        public DateTime? DeliveryDate { get; set; }
+        public int? VehicleId { get; set; }
+        public string? VehicleModel { get; set; }
+        public int? DriverId { get; set; }
+        public string? DriverName { get; set; }
+        public decimal? TotalPrice { get; set; }
+        public string? CurrentLocation { get; set; }
+        public DateTime? EstimatedArrival { get; set; }
     }
 
     public class CreateOrderDto
@@ -18,11 +30,32 @@ namespace back_end.BLL.DTOs
         [Required]
         public int ProductId { get; set; }
         public string? Notes { get; set; }
+        public string? PickupAddress { get; set; }
+        public string? DeliveryAddress { get; set; }
+        public DateTime? PickupDate { get; set; }
+        public DateTime? DeliveryDate { get; set; }
+        public int? VehicleId { get; set; }
+        public int? DriverId { get; set; }
+        public decimal? TotalPrice { get; set; }
     }
 
     public class UpdateOrderStatusDto
     {
         [Required]
         public string Status { get; set; } = string.Empty;
+    }
+
+    public class UpdateOrderDto
+    {
+        public string? Notes { get; set; }
+        public string? PickupAddress { get; set; }
+        public string? DeliveryAddress { get; set; }
+        public DateTime? PickupDate { get; set; }
+        public DateTime? DeliveryDate { get; set; }
+        public int? VehicleId { get; set; }
+        public int? DriverId { get; set; }
+        public decimal? TotalPrice { get; set; }
+        public string? CurrentLocation { get; set; }
+        public DateTime? EstimatedArrival { get; set; }
     }
 }

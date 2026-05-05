@@ -74,6 +74,18 @@ namespace back_end.DAL
                 .HasForeignKey(d => d.VehicleId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<Order>()
+                .HasOne(o => o.Vehicle)
+                .WithMany()
+                .HasForeignKey(o => o.VehicleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Order>()
+                .HasOne(o => o.Driver)
+                .WithMany()
+                .HasForeignKey(o => o.DriverId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             modelBuilder.Entity<Product>().HasData(
                 new Product { Id = 1, Name = "Colorado Springs → Tampa", Description = "Flatbed / Oversized Containers", Price = 4100m, ImageUrl = "/images/real9.jpg", Category = "Full Load", Stock = 1, IsActive = true, CreatedAt = new DateTime(2026, 1, 1) },
                 new Product { Id = 2, Name = "Madera → Fort Collins", Description = "Flatbed / HVAC Units", Price = 5120m, ImageUrl = "/images/real2.jpg", Category = "Full Load", Stock = 1, IsActive = true, CreatedAt = new DateTime(2026, 1, 1) },

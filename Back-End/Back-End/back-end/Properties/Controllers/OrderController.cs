@@ -51,6 +51,15 @@ namespace back_end.Controllers
             var created = _orderService.Create(user.Id, dto);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
+        public IActionResult Update(int id, [FromBody] UpdateOrderDto dto)
+        {
+            var updated = _orderService.Update(id, dto);
+            if (updated == null) return NotFound(new { Message = $"Order {id} not found" });
+            return Ok(updated);
+        }
+
         [HttpPatch("{id}/status")]
         [Authorize(Roles = "Admin")]
         [AdminActionFilter]

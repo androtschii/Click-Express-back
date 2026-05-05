@@ -8,6 +8,7 @@ namespace back_end.BLL.Services
         OrderDto? GetById(int id);
         OrderDto Create(int userId, CreateOrderDto dto);
         OrderDto? UpdateStatus(int id, string status);
+        OrderDto? Update(int id, UpdateOrderDto dto);
         bool Delete(int id);
         object GetStats();
     }
