@@ -103,7 +103,9 @@ namespace back_end.DAL
                 new Product { Id = 7, Name = "Connellsville → Snyder", Description = "Flatbed / Heavy Equipment", Price = 3100m, ImageUrl = "/images/real7.jpg", Category = "Full Load", Stock = 1, IsActive = true, CreatedAt = new DateTime(2026, 1, 1) },
                 new Product { Id = 8, Name = "Las Vegas → Carnesville", Description = "Flatbed / Construction Equipment", Price = 6350m, ImageUrl = "/images/real8.jpg", Category = "Partial", Stock = 1, IsActive = true, CreatedAt = new DateTime(2026, 1, 1) },
                 new Product { Id = 9, Name = "Houston → Jackson", Description = "Flatbed / Multi-Stop Steel", Price = 14900m, ImageUrl = "/images/real1.jpg", Category = "Full Load", Stock = 1, IsActive = true, CreatedAt = new DateTime(2026, 1, 1) },
-                new Product { Id = 10, Name = "Phoenix → Memphis", Description = "Flatbed / Heavy Equipment", Price = 6800m, ImageUrl = "/images/real10.jpg", Category = "Full Load", Stock = 1, IsActive = true, CreatedAt = new DateTime(2026, 1, 1) }
+                new Product { Id = 10, Name = "Phoenix → Memphis", Description = "Flatbed / Heavy Equipment", Price = 6800m, ImageUrl = "/images/real10.jpg", Category = "Full Load", Stock = 1, IsActive = true, CreatedAt = new DateTime(2026, 1, 1) },
+                new Product { Id = 11, Name = "Phoenix, AZ → Miami, FL", Description = "Stepdeck / Generator Equipment (via Santa Fe Springs, CA)", Price = 12500m, ImageUrl = "/images/real4.jpg", Category = "Partial", Stock = 1, IsActive = true, CreatedAt = new DateTime(2026, 1, 1) },
+                new Product { Id = 12, Name = "Stillwater, OK → Miami, FL", Description = "Flatbed / Multi-Stop Freight (7 stops)", Price = 22400m, ImageUrl = "/images/real3.jpg", Category = "Full Load", Stock = 1, IsActive = true, CreatedAt = new DateTime(2026, 1, 1) }
             );
         }
     }

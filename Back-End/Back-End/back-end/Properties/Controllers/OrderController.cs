@@ -59,6 +59,22 @@ namespace back_end.Controllers
             return Ok(_orderService.GetTracking(id));
         }
 
+        [HttpPatch("{id}/cancel")]
+        public IActionResult CancelOrder(int id)
+        {
+            var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            var user = _db.Users.FirstOrDefault(u => u.Username == username);
+            if (user == null) return Unauthorized();
+
+            var order = _orderService.GetById(id);
+            if (order == null) return NotFound(new { Message = $"Order {id} not found" });
+            if (order.UserId != user.Id) return Forbid();
+
+            var updated = _orderService.UpdateStatus(id, "Cancelled");
+            if (updated == null) return NotFound(new { Message = $"Order {id} not found" });
+            return Ok(updated);
+        }
+
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
         public IActionResult Update(int id, [FromBody] UpdateOrderDto dto)
