@@ -1,9 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using back_end.BLL.DTOs;
 using back_end.BLL.Services;
 using back_end.DAL;
+using back_end.Domain;
 using back_end.Filters;
 namespace back_end.Controllers
 {
@@ -42,6 +44,52 @@ namespace back_end.Controllers
             if (order == null) return NotFound(new { Message = $"Order {id} not found" });
             return Ok(order);
         }
+        [HttpPost("checkout")]
+        public IActionResult Checkout()
+        {
+            var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            var user = _db.Users.FirstOrDefault(u => u.Username == username);
+            if (user == null) return Unauthorized();
+
+            var cart = _db.Carts
+                .Include(c => c.Items)
+                .ThenInclude(i => i.Product)
+                .FirstOrDefault(c => c.UserId == user.Id);
+
+            if (cart == null || !cart.Items.Any())
+                return BadRequest(new { message = "Cart is empty" });
+
+            var orderIds = new List<int>();
+            foreach (var item in cart.Items)
+            {
+                var order = new Order
+                {
+                    UserId = user.Id,
+                    ProductId = item.ProductId,
+                    Status = "Pending",
+                    CreatedAt = DateTime.UtcNow,
+                    TotalPrice = item.Product.Price * item.Quantity
+                };
+                _db.Orders.Add(order);
+                _db.SaveChanges();
+
+                _db.OrderItems.Add(new OrderItem
+                {
+                    OrderId = order.Id,
+                    ProductId = item.ProductId,
+                    Quantity = item.Quantity,
+                    UnitPrice = item.Product.Price
+                });
+                orderIds.Add(order.Id);
+            }
+
+            _db.CartItems.RemoveRange(cart.Items);
+            _db.SaveChanges();
+
+            var result = orderIds.Select(id => _orderService.GetById(id));
+            return Ok(result);
+        }
+
         [HttpPost]
         public IActionResult Create([FromBody] CreateOrderDto dto)
         {
