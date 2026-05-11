@@ -42,15 +42,6 @@ namespace back_end.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
-            migrationBuilder.InsertData(
-                table: "Products",
-                columns: new[] { "Id", "Category", "CreatedAt", "Description", "ImageUrl", "IsActive", "Name", "Price", "Stock" },
-                values: new object[,]
-                {
-                    { 11, "Partial", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Stepdeck / Generator Equipment (via Santa Fe Springs, CA)", "/images/real4.jpg", true, "Phoenix, AZ → Miami, FL", 12500m, 1 },
-                    { 12, "Full Load", new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified), "Flatbed / Multi-Stop Freight (7 stops)", "/images/real3.jpg", true, "Stillwater, OK → Miami, FL", 22400m, 1 }
-                });
-
             migrationBuilder.CreateIndex(
                 name: "IX_Documents_OrderId",
                 table: "Documents",
@@ -67,16 +58,6 @@ namespace back_end.Migrations
         {
             migrationBuilder.DropTable(
                 name: "Documents");
-
-            migrationBuilder.DeleteData(
-                table: "Products",
-                keyColumn: "Id",
-                keyValue: 11);
-
-            migrationBuilder.DeleteData(
-                table: "Products",
-                keyColumn: "Id",
-                keyValue: 12);
         }
     }
 }
