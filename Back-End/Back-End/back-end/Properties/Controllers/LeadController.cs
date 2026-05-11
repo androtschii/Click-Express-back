@@ -1,10 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
-using AutoMapper;
 using back_end.BLL.DTOs;
-using back_end.DAL;
-using back_end.Domain;
+using back_end.BLL.Services;
 
 namespace back_end.Controllers
 {
@@ -12,14 +10,12 @@ namespace back_end.Controllers
     [ApiController]
     public class LeadController : ControllerBase
     {
-        private readonly AppDbContext _db;
-        private readonly IMapper _mapper;
+        private readonly ILeadService _leadService;
         private readonly ILogger<LeadController> _logger;
 
-        public LeadController(AppDbContext db, IMapper mapper, ILogger<LeadController> logger)
+        public LeadController(ILeadService leadService, ILogger<LeadController> logger)
         {
-            _db = db;
-            _mapper = mapper;
+            _leadService = leadService;
             _logger = logger;
         }
 
@@ -27,53 +23,41 @@ namespace back_end.Controllers
         [AllowAnonymous]
         public IActionResult Submit([FromBody] CreateLeadDto dto)
         {
-            var lead = _mapper.Map<Lead>(dto);
-            _db.Leads.Add(lead);
-            _db.SaveChanges();
-            _logger.LogInformation("Lead {Id} submitted from {Email}: {Origin} -> {Destination}", lead.Id, lead.Email, lead.Origin, lead.Destination);
-            return Ok(new { lead.Id, message = "Lead submitted" });
+            var created = _leadService.Submit(dto);
+            return Ok(new { created.Id, message = "Lead submitted" });
         }
 
         [HttpGet]
         [Authorize(Roles = "Admin")]
         public IActionResult GetAll([FromQuery] string? status)
-        {
-            var query = _db.Leads.AsQueryable();
-            if (!string.IsNullOrEmpty(status)) query = query.Where(l => l.Status == status);
-            var items = query.OrderByDescending(l => l.CreatedAt).ToList();
-            return Ok(_mapper.Map<List<LeadDto>>(items));
-        }
+            => Ok(_leadService.GetAll(status));
 
         [HttpGet("{id}")]
         [Authorize(Roles = "Admin")]
         public IActionResult GetById(int id)
         {
-            var lead = _db.Leads.Find(id);
+            var lead = _leadService.GetById(id);
             if (lead == null) return NotFound(new { message = $"Lead {id} not found" });
-            return Ok(_mapper.Map<LeadDto>(lead));
+            return Ok(lead);
         }
 
         [HttpPatch("{id}/status")]
         [Authorize(Roles = "Admin")]
         public IActionResult UpdateStatus(int id, [FromBody] UpdateLeadStatusDto dto)
         {
-            var lead = _db.Leads.Find(id);
-            if (lead == null) return NotFound(new { message = $"Lead {id} not found" });
-            lead.Status = dto.Status;
-            _db.SaveChanges();
+            var updated = _leadService.UpdateStatus(id, dto.Status);
+            if (updated == null) return NotFound(new { message = $"Lead {id} not found" });
             var admin = User.FindFirst(ClaimTypes.Name)?.Value;
             _logger.LogInformation("Admin {Admin} changed lead {LeadId} status to {Status}", admin, id, dto.Status);
-            return Ok(new { lead.Id, lead.Status });
+            return Ok(new { updated.Id, updated.Status });
         }
 
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
         public IActionResult Delete(int id)
         {
-            var lead = _db.Leads.Find(id);
-            if (lead == null) return NotFound(new { message = $"Lead {id} not found" });
-            _db.Leads.Remove(lead);
-            _db.SaveChanges();
+            if (!_leadService.Delete(id))
+                return NotFound(new { message = $"Lead {id} not found" });
             var admin = User.FindFirst(ClaimTypes.Name)?.Value;
             _logger.LogWarning("Admin {Admin} deleted lead {LeadId}", admin, id);
             return NoContent();

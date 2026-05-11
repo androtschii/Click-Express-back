@@ -47,6 +47,18 @@ namespace back_end.BLL.Mapping
                 .ForMember(dest => dest.ProductImageUrl,    opt => opt.MapFrom(src => src.Product.ImageUrl))
                 .ForMember(dest => dest.ProductCategory,    opt => opt.MapFrom(src => src.Product.Category))
                 .ForMember(dest => dest.ProductDescription, opt => opt.MapFrom(src => src.Product.Description));
+
+            CreateMap<CartItem, CartItemDto>()
+                .ForMember(dest => dest.ProductName, opt => opt.MapFrom(src => src.Product.Name))
+                .ForMember(dest => dest.Price,       opt => opt.MapFrom(src => src.Product.Price))
+                .ForMember(dest => dest.Total,       opt => opt.MapFrom(src => src.Product.Price * src.Quantity));
+            CreateMap<Cart, CartDto>();
+
+            CreateMap<Review, ReviewDto>()
+                .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.User.Username));
+
+            CreateMap<NewsArticle, NewsArticleDto>()
+                .ForMember(dest => dest.AuthorName, opt => opt.MapFrom(src => src.Author.Username));
         }
     }
 }

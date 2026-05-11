@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using back_end.BLL.DTOs;
+using back_end.BLL.Services;
 using back_end.DAL;
-using back_end.Domain;
 
 namespace back_end.Controllers
 {
@@ -11,53 +11,36 @@ namespace back_end.Controllers
     [ApiController]
     public class ReviewController : ControllerBase
     {
+        private readonly IReviewService _reviewService;
         private readonly AppDbContext _db;
         private readonly ILogger<ReviewController> _logger;
 
-        public ReviewController(AppDbContext db, ILogger<ReviewController> logger)
+        public ReviewController(IReviewService reviewService, AppDbContext db, ILogger<ReviewController> logger)
         {
+            _reviewService = reviewService;
             _db = db;
             _logger = logger;
+        }
+
+        private int? GetUserId()
+        {
+            var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            if (username == null) return null;
+            return _db.Users.FirstOrDefault(u => u.Username == username)?.Id;
         }
 
         [HttpGet]
         [AllowAnonymous]
         public IActionResult GetAll([FromQuery] bool onlyApproved = true)
-        {
-            var query = _db.Reviews.Include(r => r.User).AsQueryable();
-            if (onlyApproved) query = query.Where(r => r.IsApproved);
-            var items = query
-                .OrderByDescending(r => r.CreatedAt)
-                .Select(r => new
-                {
-                    r.Id,
-                    r.Rating,
-                    r.Text,
-                    r.CreatedAt,
-                    r.IsApproved,
-                    r.ProductId,
-                    Username = r.User.Username
-                })
-                .ToList();
-            return Ok(items);
-        }
+            => Ok(_reviewService.GetAll(onlyApproved));
 
         [HttpGet("{id}")]
         [AllowAnonymous]
         public IActionResult GetById(int id)
         {
-            var review = _db.Reviews.Include(r => r.User).FirstOrDefault(r => r.Id == id);
+            var review = _reviewService.GetById(id);
             if (review == null) return NotFound(new { message = $"Review {id} not found" });
-            return Ok(new
-            {
-                review.Id,
-                review.Rating,
-                review.Text,
-                review.CreatedAt,
-                review.IsApproved,
-                review.ProductId,
-                Username = review.User.Username
-            });
+            return Ok(review);
         }
 
         [HttpPost]
@@ -69,61 +52,40 @@ namespace back_end.Controllers
             if (string.IsNullOrWhiteSpace(dto.Text))
                 return BadRequest(new { message = "Text is required" });
 
-            var username = User.FindFirst(ClaimTypes.Name)?.Value;
-            var user = _db.Users.FirstOrDefault(u => u.Username == username);
-            if (user == null) return Unauthorized();
+            var userId = GetUserId();
+            if (userId == null) return Unauthorized();
 
-            var review = new Review
-            {
-                UserId = user.Id,
-                ProductId = dto.ProductId,
-                Rating = dto.Rating,
-                Text = dto.Text,
-                IsApproved = false
-            };
-            _db.Reviews.Add(review);
-            _db.SaveChanges();
-            return CreatedAtAction(nameof(GetById), new { id = review.Id }, new { review.Id });
+            var created = _reviewService.Create(userId.Value, dto);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, new { created.Id });
         }
 
         [HttpPatch("{id}/approve")]
         [Authorize(Roles = "Admin")]
         public IActionResult Approve(int id)
         {
-            var review = _db.Reviews.Find(id);
-            if (review == null) return NotFound(new { message = $"Review {id} not found" });
-            review.IsApproved = true;
-            _db.SaveChanges();
+            var approved = _reviewService.Approve(id);
+            if (approved == null) return NotFound(new { message = $"Review {id} not found" });
             var admin = User.FindFirst(ClaimTypes.Name)?.Value;
             _logger.LogInformation("Admin {Admin} approved review {ReviewId}", admin, id);
-            return Ok(new { review.Id, review.IsApproved });
+            return Ok(new { approved.Id, approved.IsApproved });
         }
 
         [HttpDelete("{id}")]
         [Authorize]
         public IActionResult Delete(int id)
         {
-            var review = _db.Reviews.Find(id);
+            var review = _reviewService.GetById(id);
             if (review == null) return NotFound(new { message = $"Review {id} not found" });
 
-            var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            var userId = GetUserId();
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
-            var user = _db.Users.FirstOrDefault(u => u.Username == username);
-
-            if (role != "Admin" && (user == null || review.UserId != user.Id))
+            if (role != "Admin" && (userId == null || review.UserId != userId.Value))
                 return Forbid();
 
-            _db.Reviews.Remove(review);
-            _db.SaveChanges();
+            _reviewService.Delete(id);
+            var username = User.FindFirst(ClaimTypes.Name)?.Value;
             _logger.LogWarning("{Role} {Username} deleted review {ReviewId}", role, username, id);
             return NoContent();
         }
-    }
-
-    public class CreateReviewDto
-    {
-        public int? ProductId { get; set; }
-        public int Rating { get; set; }
-        public string Text { get; set; } = string.Empty;
     }
 }

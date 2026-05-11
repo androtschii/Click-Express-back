@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using back_end.BLL.DTOs;
+using back_end.BLL.Services;
 using back_end.DAL;
-using back_end.Domain;
 
 namespace back_end.Controllers
 {
@@ -11,11 +11,13 @@ namespace back_end.Controllers
     [ApiController]
     public class NewsController : ControllerBase
     {
+        private readonly INewsService _newsService;
         private readonly AppDbContext _db;
         private readonly ILogger<NewsController> _logger;
 
-        public NewsController(AppDbContext db, ILogger<NewsController> logger)
+        public NewsController(INewsService newsService, AppDbContext db, ILogger<NewsController> logger)
         {
+            _newsService = newsService;
             _db = db;
             _logger = logger;
         }
@@ -23,41 +25,15 @@ namespace back_end.Controllers
         [HttpGet]
         [AllowAnonymous]
         public IActionResult GetAll([FromQuery] bool onlyPublished = true)
-        {
-            var query = _db.NewsArticles.Include(n => n.Author).AsQueryable();
-            if (onlyPublished) query = query.Where(n => n.IsPublished);
-            var items = query
-                .OrderByDescending(n => n.PublishedAt)
-                .Select(n => new
-                {
-                    n.Id,
-                    n.Title,
-                    n.Content,
-                    n.ImageUrl,
-                    n.PublishedAt,
-                    n.IsPublished,
-                    AuthorName = n.Author.Username
-                })
-                .ToList();
-            return Ok(items);
-        }
+            => Ok(_newsService.GetAll(onlyPublished));
 
         [HttpGet("{id}")]
         [AllowAnonymous]
         public IActionResult GetById(int id)
         {
-            var article = _db.NewsArticles.Include(n => n.Author).FirstOrDefault(n => n.Id == id);
+            var article = _newsService.GetById(id);
             if (article == null) return NotFound(new { message = $"Article {id} not found" });
-            return Ok(new
-            {
-                article.Id,
-                article.Title,
-                article.Content,
-                article.ImageUrl,
-                article.PublishedAt,
-                article.IsPublished,
-                AuthorName = article.Author.Username
-            });
+            return Ok(article);
         }
 
         [HttpPost]
@@ -71,56 +47,31 @@ namespace back_end.Controllers
             var author = _db.Users.FirstOrDefault(u => u.Username == username);
             if (author == null) return Unauthorized();
 
-            var article = new NewsArticle
-            {
-                Title = dto.Title,
-                Content = dto.Content,
-                ImageUrl = dto.ImageUrl,
-                AuthorId = author.Id,
-                IsPublished = dto.IsPublished
-            };
-            _db.NewsArticles.Add(article);
-            _db.SaveChanges();
-            _logger.LogInformation("Admin {Admin} published news article {ArticleId} ({Title})", username, article.Id, article.Title);
-            return CreatedAtAction(nameof(GetById), new { id = article.Id }, new { article.Id });
+            var created = _newsService.Create(author.Id, dto);
+            _logger.LogInformation("Admin {Admin} published news article {ArticleId} ({Title})", username, created.Id, created.Title);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, new { created.Id });
         }
 
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
         public IActionResult Update(int id, [FromBody] CreateNewsDto dto)
         {
-            var article = _db.NewsArticles.Find(id);
-            if (article == null) return NotFound(new { message = $"Article {id} not found" });
-
-            article.Title = dto.Title;
-            article.Content = dto.Content;
-            article.ImageUrl = dto.ImageUrl;
-            article.IsPublished = dto.IsPublished;
-            _db.SaveChanges();
+            var updated = _newsService.Update(id, dto);
+            if (updated == null) return NotFound(new { message = $"Article {id} not found" });
             var admin = User.FindFirst(ClaimTypes.Name)?.Value;
             _logger.LogInformation("Admin {Admin} updated news article {ArticleId}", admin, id);
-            return Ok(new { article.Id });
+            return Ok(new { updated.Id });
         }
 
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
         public IActionResult Delete(int id)
         {
-            var article = _db.NewsArticles.Find(id);
-            if (article == null) return NotFound(new { message = $"Article {id} not found" });
-            _db.NewsArticles.Remove(article);
-            _db.SaveChanges();
+            if (!_newsService.Delete(id))
+                return NotFound(new { message = $"Article {id} not found" });
             var admin = User.FindFirst(ClaimTypes.Name)?.Value;
             _logger.LogWarning("Admin {Admin} deleted news article {ArticleId}", admin, id);
             return NoContent();
         }
-    }
-
-    public class CreateNewsDto
-    {
-        public string Title { get; set; } = string.Empty;
-        public string Content { get; set; } = string.Empty;
-        public string? ImageUrl { get; set; }
-        public bool IsPublished { get; set; } = true;
     }
 }

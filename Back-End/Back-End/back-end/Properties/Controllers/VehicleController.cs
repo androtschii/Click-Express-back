@@ -1,9 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using AutoMapper;
 using back_end.BLL.DTOs;
-using back_end.DAL;
-using back_end.Domain;
+using back_end.BLL.Services;
 
 namespace back_end.Controllers
 {
@@ -11,76 +9,59 @@ namespace back_end.Controllers
     [ApiController]
     public class VehicleController : ControllerBase
     {
-        private readonly AppDbContext _db;
-        private readonly IMapper _mapper;
+        private readonly IVehicleService _vehicleService;
 
-        public VehicleController(AppDbContext db, IMapper mapper)
+        public VehicleController(IVehicleService vehicleService)
         {
-            _db = db;
-            _mapper = mapper;
+            _vehicleService = vehicleService;
         }
 
         [HttpGet]
         [AllowAnonymous]
         public IActionResult GetAll([FromQuery] string? type, [FromQuery] bool? available)
-        {
-            var query = _db.Vehicles.AsQueryable();
-            if (!string.IsNullOrEmpty(type)) query = query.Where(v => v.Type == type);
-            if (available.HasValue) query = query.Where(v => v.IsAvailable == available.Value);
-            var items = query.OrderBy(v => v.Model).ToList();
-            return Ok(_mapper.Map<List<VehicleDto>>(items));
-        }
+            => Ok(_vehicleService.GetAll(type, available));
 
         [HttpGet("{id}")]
         [AllowAnonymous]
         public IActionResult GetById(int id)
         {
-            var vehicle = _db.Vehicles.Find(id);
+            var vehicle = _vehicleService.GetById(id);
             if (vehicle == null) return NotFound(new { message = $"Vehicle {id} not found" });
-            return Ok(_mapper.Map<VehicleDto>(vehicle));
+            return Ok(vehicle);
         }
 
         [HttpPost]
         [Authorize(Roles = "Admin")]
         public IActionResult Create([FromBody] CreateVehicleDto dto)
         {
-            var vehicle = _mapper.Map<Vehicle>(dto);
-            _db.Vehicles.Add(vehicle);
-            _db.SaveChanges();
-            return CreatedAtAction(nameof(GetById), new { id = vehicle.Id }, _mapper.Map<VehicleDto>(vehicle));
+            var created = _vehicleService.Create(dto);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
         public IActionResult Update(int id, [FromBody] UpdateVehicleDto dto)
         {
-            var vehicle = _db.Vehicles.Find(id);
-            if (vehicle == null) return NotFound(new { message = $"Vehicle {id} not found" });
-
-            _mapper.Map(dto, vehicle);
-            _db.SaveChanges();
-            return Ok(_mapper.Map<VehicleDto>(vehicle));
+            var updated = _vehicleService.Update(id, dto);
+            if (updated == null) return NotFound(new { message = $"Vehicle {id} not found" });
+            return Ok(updated);
         }
 
         [HttpPatch("{id}/availability")]
         [Authorize(Roles = "Admin")]
         public IActionResult ToggleAvailability(int id)
         {
-            var vehicle = _db.Vehicles.Find(id);
-            if (vehicle == null) return NotFound(new { message = $"Vehicle {id} not found" });
-            vehicle.IsAvailable = !vehicle.IsAvailable;
-            _db.SaveChanges();
-            return Ok(new { vehicle.Id, vehicle.IsAvailable });
+            var updated = _vehicleService.ToggleAvailability(id);
+            if (updated == null) return NotFound(new { message = $"Vehicle {id} not found" });
+            return Ok(new { updated.Id, updated.IsAvailable });
         }
 
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
         public IActionResult Delete(int id)
         {
-            var vehicle = _db.Vehicles.Find(id);
-            if (vehicle == null) return NotFound(new { message = $"Vehicle {id} not found" });
-            _db.Vehicles.Remove(vehicle);
-            _db.SaveChanges();
+            if (!_vehicleService.Delete(id))
+                return NotFound(new { message = $"Vehicle {id} not found" });
             return NoContent();
         }
     }
