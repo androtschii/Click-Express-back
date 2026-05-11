@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -41,6 +42,7 @@ namespace back_end.Controllers
         }
 
         [HttpPost("login")]
+        [EnableRateLimiting("auth")]
         public IActionResult Login([FromBody] LoginRequest request)
         {
             var user = _db.Users.FirstOrDefault(u =>
@@ -106,6 +108,7 @@ namespace back_end.Controllers
         }
 
         [HttpPost("forgot-password")]
+        [EnableRateLimiting("auth")]
         public IActionResult ForgotPassword([FromBody] ForgotPasswordRequest req)
         {
             var user = _db.Users.FirstOrDefault(u => u.Email == req.Email && u.IsActive);
