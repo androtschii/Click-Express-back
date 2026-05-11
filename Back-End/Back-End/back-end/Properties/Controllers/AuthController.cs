@@ -67,8 +67,6 @@ namespace back_end.Controllers
             user.RefreshTokenExpiry = DateTime.Now.AddDays(7);
             _db.SaveChanges();
 
-            HttpContext.Session.SetString("username", user.Username);
-            HttpContext.Session.SetString("role", user.Role);
             _logger.LogInformation("Пользователь {Username} вошёл в систему", user.Username);
             return Ok(new { token, refreshToken = refresh, username = user.Username, role = user.Role });
         }
@@ -103,7 +101,6 @@ namespace back_end.Controllers
                 user.RefreshTokenExpiry = null;
                 _db.SaveChanges();
             }
-            HttpContext.Session.Clear();
             return Ok(new { message = "Вы вышли" });
         }
 
@@ -181,8 +178,6 @@ namespace back_end.Controllers
             user.RefreshTokenExpiry = DateTime.Now.AddDays(7);
             _db.SaveChanges();
 
-            HttpContext.Session.SetString("username", user.Username);
-            HttpContext.Session.SetString("role", user.Role);
             _logger.LogInformation("Зарегистрирован новый пользователь: {Username}", user.Username);
             return Ok(new { token, refreshToken = refresh, username = user.Username, role = user.Role });
         }

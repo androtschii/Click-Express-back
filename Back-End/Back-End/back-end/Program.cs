@@ -103,14 +103,6 @@ builder.Services.AddRateLimiter(options =>
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
 
-builder.Services.AddDistributedMemoryCache();
-builder.Services.AddSession(options =>
-{
-    options.IdleTimeout = TimeSpan.FromHours(8);
-    options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
-});
-
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -159,7 +151,6 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseCors();
 app.UseRateLimiter();
-app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
