@@ -73,6 +73,14 @@ namespace back_end.Controllers
                 _db.Orders.Add(order);
                 _db.SaveChanges();
 
+                _db.OrderStatusHistories.Add(new OrderStatusHistory
+                {
+                    OrderId = order.Id,
+                    Status = "Pending",
+                    Timestamp = DateTime.UtcNow,
+                    Note = "Order placed via checkout"
+                });
+
                 _db.OrderItems.Add(new OrderItem
                 {
                     OrderId = order.Id,

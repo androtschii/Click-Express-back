@@ -43,6 +43,12 @@ namespace back_end.BLL.Services
                 TotalPrice = dto.TotalPrice,
             };
             var created = _repository.Create(order);
+            _repository.AddHistory(new OrderStatusHistory
+            {
+                OrderId = created.Id,
+                Status = "Pending",
+                Timestamp = DateTime.UtcNow,
+            });
             _logger.LogInformation("Order {Id} created for user {UserId}", created.Id, userId);
             return _mapper.Map<OrderDto>(created);
         }
