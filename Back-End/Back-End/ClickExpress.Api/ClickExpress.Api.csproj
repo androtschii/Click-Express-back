@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ClickExpress.BusinessLogic\ClickExpress.BusinessLogic.csproj" />
+    <ProjectReference Include="..\ClickExpress.DataAccess\ClickExpress.DataAccess.csproj" />
+    <ProjectReference Include="..\ClickExpress.Domain\ClickExpress.Domain.csproj" />
+  </ItemGroup>
+</Project>
