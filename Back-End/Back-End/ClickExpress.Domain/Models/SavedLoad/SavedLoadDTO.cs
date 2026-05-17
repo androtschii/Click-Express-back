@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace ClickExpress.Domain.Models.SavedLoad
 {
     public class SavedLoadDTO
@@ -12,10 +10,5 @@ namespace ClickExpress.Domain.Models.SavedLoad
         public string ProductImageUrl { get; set; } = string.Empty;
         public string ProductCategory { get; set; } = string.Empty;
         public string ProductDescription { get; set; } = string.Empty;
-    }
-
-    public class AddSavedLoadDTO
-    {
-        [Required] public int ProductId { get; set; }
     }
 }

@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace ClickExpress.Domain.Models.Review
 {
     public class ReviewDTO
@@ -12,12 +10,5 @@ namespace ClickExpress.Domain.Models.Review
         public string Text { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public bool IsApproved { get; set; }
-    }
-
-    public class CreateReviewDTO
-    {
-        public int? ProductId { get; set; }
-        [Range(1, 5)] public int Rating { get; set; }
-        [Required] public string Text { get; set; } = string.Empty;
     }
 }
