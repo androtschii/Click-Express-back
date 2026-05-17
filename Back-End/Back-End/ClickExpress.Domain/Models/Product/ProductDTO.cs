@@ -1,0 +1,53 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace ClickExpress.Domain.Models.Product
+{
+    public class ProductDTO
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+        public string ImageUrl { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public int Stock { get; set; }
+        public bool IsActive { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public class CreateProductDTO
+    {
+        [Required][MaxLength(100)] public string Name { get; set; } = string.Empty;
+        [MaxLength(500)] public string Description { get; set; } = string.Empty;
+        [Range(0.01, double.MaxValue)] public decimal Price { get; set; }
+        public string ImageUrl { get; set; } = string.Empty;
+        [Required] public string Category { get; set; } = string.Empty;
+        [Range(0, int.MaxValue)] public int Stock { get; set; }
+    }
+
+    public class UpdateProductDTO
+    {
+        [Required][MaxLength(100)] public string Name { get; set; } = string.Empty;
+        [MaxLength(500)] public string Description { get; set; } = string.Empty;
+        [Range(0.01, double.MaxValue)] public decimal Price { get; set; }
+        public string ImageUrl { get; set; } = string.Empty;
+        [Required] public string Category { get; set; } = string.Empty;
+        [Range(0, int.MaxValue)] public int Stock { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+    public class UpdatePriceDTO
+    {
+        [Range(0.01, double.MaxValue)] public decimal Price { get; set; }
+    }
+
+    public class UpdateImageDTO
+    {
+        [Required] public string ImageUrl { get; set; } = string.Empty;
+    }
+
+    public class UpdateStockDTO
+    {
+        [Range(0, int.MaxValue)] public int Quantity { get; set; }
+    }
+}
