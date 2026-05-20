@@ -134,7 +134,7 @@ namespace ClickExpress.Api.Controller
                     u.PasswordResetToken = resetToken;
                     u.PasswordResetTokenExpiry = DateTime.Now.AddHours(1);
                     db.SaveChanges();
-                    _logger.LogInformation("Password reset requested for {Email}, token: {Token}", req.Email, resetToken);
+                    _logger.LogInformation("Password reset requested for {Email}", req.Email);
                 }
             }
             return Ok(new { message = "If the email is registered, a reset link has been sent" });
@@ -146,8 +146,8 @@ namespace ClickExpress.Api.Controller
             if (string.IsNullOrWhiteSpace(req.Token) || string.IsNullOrWhiteSpace(req.NewPassword))
                 return BadRequest(new { message = "Token and password are required" });
 
-            if (req.NewPassword.Length < 6)
-                return BadRequest(new { message = "Password must be at least 6 characters" });
+            if (req.NewPassword.Length < 8)
+                return BadRequest(new { message = "Password must be at least 8 characters" });
 
             using (var db = new UserContext())
             {

@@ -61,8 +61,8 @@ namespace ClickExpress.BusinessLogic.Core.User
             if (string.IsNullOrWhiteSpace(user.Email) || !user.Email.Contains("@"))
                 return new ResponseAction { IsSuccess = false, Message = "Invalid Email format!" };
 
-            if (string.IsNullOrWhiteSpace(user.Password) || user.Password.Length < 6)
-                return new ResponseAction { IsSuccess = false, Message = "Password must be at least 6 characters!" };
+            if (string.IsNullOrWhiteSpace(user.Password) || user.Password.Length < 8)
+                return new ResponseAction { IsSuccess = false, Message = "Password must be at least 8 characters!" };
 
             using (var db = new UserContext())
             {
