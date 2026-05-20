@@ -19,7 +19,8 @@ namespace ClickExpress.BusinessLogic.Core.Review
                 {
                     Id = r.Id, UserId = r.UserId, Username = r.User.Username,
                     ProductId = r.ProductId, Rating = r.Rating, Text = r.Text,
-                    CreatedAt = r.CreatedAt, IsApproved = r.IsApproved
+                    CreatedAt = r.CreatedAt, IsApproved = r.IsApproved,
+                    Role = r.Role, Location = r.Location
                 }).ToList();
             }
         }
@@ -34,7 +35,8 @@ namespace ClickExpress.BusinessLogic.Core.Review
                 {
                     Id = r.Id, UserId = r.UserId, Username = r.User.Username,
                     ProductId = r.ProductId, Rating = r.Rating, Text = r.Text,
-                    CreatedAt = r.CreatedAt, IsApproved = r.IsApproved
+                    CreatedAt = r.CreatedAt, IsApproved = r.IsApproved,
+                    Role = r.Role, Location = r.Location
                 };
             }
         }
@@ -52,7 +54,8 @@ namespace ClickExpress.BusinessLogic.Core.Review
                 var review = new ReviewData
                 {
                     UserId = userId, ProductId = dto.ProductId, Rating = dto.Rating,
-                    Text = dto.Text, IsApproved = false, CreatedAt = DateTime.Now
+                    Text = dto.Text, IsApproved = false, CreatedAt = DateTime.Now,
+                    Role = dto.Role, Location = dto.Location
                 };
                 db.Reviews.Add(review);
                 db.SaveChanges();

@@ -12,6 +12,8 @@ namespace ClickExpress.Domain.Entities.Review
         public string Text { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public bool IsApproved { get; set; } = false;
+        public string? Role { get; set; }
+        public string? Location { get; set; }
 
         public UserData User { get; set; } = null!;
         public ProductData? Product { get; set; }

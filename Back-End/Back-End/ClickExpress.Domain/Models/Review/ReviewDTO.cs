@@ -10,5 +10,7 @@ namespace ClickExpress.Domain.Models.Review
         public string Text { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
         public bool IsApproved { get; set; }
+        public string? Role { get; set; }
+        public string? Location { get; set; }
     }
 }
