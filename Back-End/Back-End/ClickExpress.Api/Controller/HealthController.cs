@@ -10,5 +10,9 @@ namespace ClickExpress.Api.Controller
         [HttpGet]
         [AllowAnonymous]
         public IActionResult Get() => Ok(new { status = "ok", timestamp = DateTime.UtcNow });
+
+        [HttpGet("ping")]
+        [AllowAnonymous]
+        public IActionResult Ping() => Ok(new { status = "ok", timestamp = DateTime.UtcNow });
     }
 }
