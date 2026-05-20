@@ -167,11 +167,14 @@ namespace ClickExpress.BusinessLogic.Core.Product
         {
             using (var db = new ProductContext())
             {
+                var products = db.Products.ToList();
                 return new
                 {
-                    Total = db.Products.Count(),
-                    Active = db.Products.Count(p => p.IsActive),
-                    OutOfStock = db.Products.Count(p => p.Stock == 0 && p.IsActive)
+                    Total      = products.Count,
+                    Active     = products.Count(p => p.IsActive),
+                    OutOfStock = products.Count(p => p.Stock == 0 && p.IsActive),
+                    Categories = products.Select(p => p.Category).Distinct().Count(),
+                    TotalValue = products.Where(p => p.IsActive).Sum(p => p.Price * p.Stock)
                 };
             }
         }
