@@ -11,5 +11,6 @@ namespace ClickExpress.Domain.Models.Product
         public int Stock { get; set; }
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
+        public int ViewCount { get; set; }
     }
 }

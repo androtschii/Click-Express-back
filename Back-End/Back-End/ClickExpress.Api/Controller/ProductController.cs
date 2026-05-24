@@ -104,6 +104,14 @@ namespace ClickExpress.Api.Controller
         [Authorize(Roles = "Admin")]
         public IActionResult GetStats() => Ok(_productActions.GetProductStatsAction());
 
+        [HttpPost("{id}/view")]
+        [AllowAnonymous]
+        public IActionResult IncrementView(int id)
+        {
+            _productActions.ResponseIncrementViewAction(id);
+            return NoContent();
+        }
+
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
         public IActionResult Delete(int id)

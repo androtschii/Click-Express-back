@@ -26,7 +26,7 @@ namespace ClickExpress.BusinessLogic.Core.Product
                     {
                         Id = p.Id, Name = p.Name, Description = p.Description,
                         Price = p.Price, ImageUrl = p.ImageUrl, Category = p.Category,
-                        Stock = p.Stock, IsActive = p.IsActive, CreatedAt = p.CreatedAt
+                        Stock = p.Stock, IsActive = p.IsActive, CreatedAt = p.CreatedAt, ViewCount = p.ViewCount
                     }).ToList();
 
                 return (items, total);
@@ -176,6 +176,18 @@ namespace ClickExpress.BusinessLogic.Core.Product
                     Categories = products.Select(p => p.Category).Distinct().Count(),
                     TotalValue = products.Where(p => p.IsActive).Sum(p => p.Price * p.Stock)
                 };
+            }
+        }
+
+        protected ResponseMsg ExecuteIncrementViewAction(int id)
+        {
+            using (var db = new ProductContext())
+            {
+                var p = db.Products.FirstOrDefault(p => p.Id == id);
+                if (p == null) return new ResponseMsg { IsSuccess = false, Message = "Not found" };
+                p.ViewCount++;
+                db.SaveChanges();
+                return new ResponseMsg { IsSuccess = true, Message = "ok" };
             }
         }
     }

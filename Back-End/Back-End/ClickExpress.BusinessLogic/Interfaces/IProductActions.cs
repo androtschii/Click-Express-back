@@ -15,5 +15,6 @@ namespace ClickExpress.BusinessLogic.Interfaces
         ResponseMsg ResponseToggleActiveAction(int id);
         ResponseMsg ResponseUpdateStockAction(int id, int quantity);
         object GetProductStatsAction();
+        ResponseMsg ResponseIncrementViewAction(int id);
     }
 }

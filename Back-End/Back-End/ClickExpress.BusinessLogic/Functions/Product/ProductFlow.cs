@@ -18,5 +18,6 @@ namespace ClickExpress.BusinessLogic.Functions.Product
         public ResponseMsg ResponseToggleActiveAction(int id) => ExecuteToggleActiveAction(id);
         public ResponseMsg ResponseUpdateStockAction(int id, int quantity) => ExecuteUpdateStockAction(id, quantity);
         public object GetProductStatsAction() => ExecuteGetProductStatsAction();
+        public ResponseMsg ResponseIncrementViewAction(int id) => ExecuteIncrementViewAction(id);
     }
 }

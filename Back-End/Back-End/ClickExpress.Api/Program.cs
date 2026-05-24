@@ -133,6 +133,8 @@ using (var db = new OrderContext())
             ALTER TABLE Reviews ADD Role NVARCHAR(100) NULL;
         IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Reviews' AND COLUMN_NAME='Location')
             ALTER TABLE Reviews ADD Location NVARCHAR(100) NULL;
+        IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Products' AND COLUMN_NAME='ViewCount')
+            ALTER TABLE Products ADD ViewCount INT NOT NULL DEFAULT 0;
     ");
 }
 
