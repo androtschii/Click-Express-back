@@ -70,5 +70,35 @@ namespace ClickExpress.Api.Controller
             if (!result.IsSuccess) return NotFound(new { message = result.Message });
             return NoContent();
         }
+
+        [HttpGet("export")]
+        [Authorize(Roles = "Admin")]
+        public IActionResult Export([FromQuery] string? status)
+        {
+            var apps = _jobApplicationActions.GetAllJobApplicationsAction(status);
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("Id,FullName,Email,Phone,Position,Status,CreatedAt,Message");
+            foreach (var a in apps)
+            {
+                sb.AppendLine(string.Join(",",
+                    a.Id,
+                    CsvEscape(a.FullName),
+                    CsvEscape(a.Email),
+                    CsvEscape(a.Phone),
+                    CsvEscape(a.Position),
+                    CsvEscape(a.Status),
+                    a.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+                    CsvEscape(a.Message)));
+            }
+            var bytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
+            return File(bytes, "text/csv", $"applications_{DateTime.UtcNow:yyyyMMdd}.csv");
+        }
+
+        private static string CsvEscape(string val)
+        {
+            if (val.Contains(',') || val.Contains('"') || val.Contains('\n'))
+                return "\"" + val.Replace("\"", "\"\"") + "\"";
+            return val;
+        }
     }
 }

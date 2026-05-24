@@ -70,5 +70,40 @@ namespace ClickExpress.Api.Controller
             if (!result.IsSuccess) return NotFound(new { message = result.Message });
             return NoContent();
         }
+
+        [HttpGet("export")]
+        [Authorize(Roles = "Admin")]
+        public IActionResult Export([FromQuery] string? status)
+        {
+            var leads = _leadActions.GetAllLeadsAction(status);
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("Id,FullName,Email,Phone,Company,Origin,Destination,Equipment,Weight,PickupDate,Status,CreatedAt,Message");
+            foreach (var l in leads)
+            {
+                sb.AppendLine(string.Join(",",
+                    l.Id,
+                    CsvEscape(l.FullName),
+                    CsvEscape(l.Email),
+                    CsvEscape(l.Phone),
+                    CsvEscape(l.Company ?? ""),
+                    CsvEscape(l.Origin),
+                    CsvEscape(l.Destination),
+                    CsvEscape(l.Equipment),
+                    l.Weight?.ToString() ?? "",
+                    l.PickupDate?.ToString("yyyy-MM-dd") ?? "",
+                    CsvEscape(l.Status),
+                    l.CreatedAt.ToString("yyyy-MM-dd HH:mm"),
+                    CsvEscape(l.Message)));
+            }
+            var bytes = System.Text.Encoding.UTF8.GetBytes(sb.ToString());
+            return File(bytes, "text/csv", $"leads_{DateTime.UtcNow:yyyyMMdd}.csv");
+        }
+
+        private static string CsvEscape(string val)
+        {
+            if (val.Contains(',') || val.Contains('"') || val.Contains('\n'))
+                return "\"" + val.Replace("\"", "\"\"") + "\"";
+            return val;
+        }
     }
 }
