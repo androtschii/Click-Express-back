@@ -77,6 +77,26 @@ namespace ClickExpress.BusinessLogic.Core.Review
             }
         }
 
+        protected ResponseMsg ExecuteRejectReviewAction(int id)
+        {
+            using (var db = new OrderContext())
+            {
+                var review = db.Reviews.FirstOrDefault(r => r.Id == id);
+                if (review == null)
+                    return new ResponseMsg { IsSuccess = false, Message = "Review not found!" };
+
+                review.IsApproved = false;
+                db.SaveChanges();
+                return new ResponseMsg { IsSuccess = true, Message = "Review rejected!" };
+            }
+        }
+
+        protected int ExecuteGetPendingCountAction()
+        {
+            using (var db = new OrderContext())
+                return db.Reviews.Count(r => !r.IsApproved);
+        }
+
         protected ResponseMsg ExecuteDeleteReviewAction(int id)
         {
             using (var db = new OrderContext())

@@ -11,6 +11,8 @@ namespace ClickExpress.BusinessLogic.Functions.Review
         public ReviewDTO? GetReviewByIdAction(int id) => ExecuteGetReviewByIdAction(id);
         public ResponseAction ResponseCreateReviewAction(int userId, CreateReviewDTO dto) => ExecuteCreateReviewAction(userId, dto);
         public ResponseMsg ResponseApproveReviewAction(int id) => ExecuteApproveReviewAction(id);
+        public ResponseMsg ResponseRejectReviewAction(int id) => ExecuteRejectReviewAction(id);
+        public int GetPendingCountAction() => ExecuteGetPendingCountAction();
         public ResponseMsg ResponseDeleteReviewAction(int id) => ExecuteDeleteReviewAction(id);
     }
 }

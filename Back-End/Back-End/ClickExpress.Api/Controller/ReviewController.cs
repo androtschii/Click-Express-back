@@ -52,6 +52,10 @@ namespace ClickExpress.Api.Controller
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, new { result.Id });
         }
 
+        [HttpGet("pending/count")]
+        [Authorize(Roles = "Admin")]
+        public IActionResult PendingCount() => Ok(new { count = _reviewActions.GetPendingCountAction() });
+
         [HttpPatch("{id}/approve")]
         [Authorize(Roles = "Admin")]
         public IActionResult Approve(int id)
@@ -61,6 +65,17 @@ namespace ClickExpress.Api.Controller
             var admin = User.FindFirst(ClaimTypes.Name)?.Value;
             _logger.LogInformation("Admin {Admin} approved review {Id}", admin, id);
             return Ok(new { id, isApproved = true });
+        }
+
+        [HttpPatch("{id}/reject")]
+        [Authorize(Roles = "Admin")]
+        public IActionResult Reject(int id)
+        {
+            var result = _reviewActions.ResponseRejectReviewAction(id);
+            if (!result.IsSuccess) return NotFound(new { message = result.Message });
+            var admin = User.FindFirst(ClaimTypes.Name)?.Value;
+            _logger.LogInformation("Admin {Admin} rejected review {Id}", admin, id);
+            return Ok(new { id, isApproved = false });
         }
 
         [HttpDelete("{id}")]

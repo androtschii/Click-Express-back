@@ -9,6 +9,8 @@ namespace ClickExpress.BusinessLogic.Interfaces
         ReviewDTO? GetReviewByIdAction(int id);
         ResponseAction ResponseCreateReviewAction(int userId, CreateReviewDTO dto);
         ResponseMsg ResponseApproveReviewAction(int id);
+        ResponseMsg ResponseRejectReviewAction(int id);
+        int GetPendingCountAction();
         ResponseMsg ResponseDeleteReviewAction(int id);
     }
 }
