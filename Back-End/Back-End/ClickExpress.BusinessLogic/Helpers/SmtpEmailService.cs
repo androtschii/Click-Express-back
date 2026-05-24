@@ -140,5 +140,28 @@ namespace ClickExpress.BusinessLogic.Helpers
 </div>";
             await SendAsync(_adminEmail, subject, body);
         }
+
+        public async Task SendPasswordResetAsync(string toEmail, string resetLink)
+        {
+            var subject = "Reset your password — Click Express";
+            var body = $@"
+<div style=""font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#0a0a0a;color:#fff;padding:32px;border-radius:8px"">
+  <div style=""border-bottom:3px solid #CC0000;padding-bottom:16px;margin-bottom:24px"">
+    <h1 style=""margin:0;font-size:22px;color:#CC0000"">Click Express Inc</h1>
+  </div>
+  <h2 style=""font-size:18px;margin:0 0 12px"">Password Reset Request</h2>
+  <p style=""color:rgba(255,255,255,0.7);line-height:1.6"">
+    We received a request to reset your password. Click the button below to set a new one.
+    This link expires in <strong style=""color:#fff"">1 hour</strong>.
+  </p>
+  <div style=""text-align:center;margin:28px 0"">
+    <a href=""{resetLink}"" style=""background:#CC0000;color:#fff;text-decoration:none;padding:12px 28px;border-radius:4px;font-weight:bold;font-size:15px;display:inline-block"">Reset Password</a>
+  </div>
+  <p style=""color:rgba(255,255,255,0.4);font-size:12px"">
+    If you didn't request this, you can safely ignore this email. Your password will not change.
+  </p>
+</div>";
+            await SendAsync(toEmail, subject, body);
+        }
     }
 }
