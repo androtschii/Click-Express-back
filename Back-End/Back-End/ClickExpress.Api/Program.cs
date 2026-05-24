@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
@@ -18,6 +19,7 @@ using ClickExpress.BusinessLogic.Functions.Lead;
 using ClickExpress.BusinessLogic.Functions.JobApplication;
 using ClickExpress.BusinessLogic.Functions.News;
 using ClickExpress.BusinessLogic.Functions.SavedLoad;
+using ClickExpress.BusinessLogic.Functions.Notification;
 using ClickExpress.Api.Middleware;
 using ClickExpress.BusinessLogic.Helpers;
 
@@ -64,6 +66,7 @@ builder.Services.AddScoped<ILeadActions, LeadFlow>();
 builder.Services.AddScoped<IJobApplicationActions, JobApplicationFlow>();
 builder.Services.AddScoped<INewsActions, NewsFlow>();
 builder.Services.AddScoped<ISavedLoadActions, SavedLoadFlow>();
+builder.Services.AddScoped<INotificationActions, NotificationFlow>();
 builder.Services.AddSingleton<IEmailService, SmtpEmailService>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -111,6 +114,30 @@ var app = builder.Build();
 using (var db = new UserContext())
 {
     db.Database.EnsureCreated();
+}
+
+using (var db = new OrderContext())
+{
+    db.Database.ExecuteSqlRaw(@"
+        IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Notifications' AND xtype='U')
+        CREATE TABLE Notifications (
+            Id INT IDENTITY(1,1) PRIMARY KEY,
+            UserId INT NOT NULL,
+            Title NVARCHAR(200) NOT NULL,
+            Body NVARCHAR(1000) NOT NULL,
+            Type NVARCHAR(50) NOT NULL DEFAULT 'info',
+            IsRead BIT NOT NULL DEFAULT 0,
+            CreatedAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+        );
+        IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Reviews' AND COLUMN_NAME='Role')
+            ALTER TABLE Reviews ADD Role NVARCHAR(100) NULL;
+        IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Reviews' AND COLUMN_NAME='Location')
+            ALTER TABLE Reviews ADD Location NVARCHAR(100) NULL;
+    ");
+}
+
+using (var db = new UserContext())
+{
 
     if (!db.Users.Any())
     {

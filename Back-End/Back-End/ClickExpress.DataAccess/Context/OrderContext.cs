@@ -11,6 +11,7 @@ using ClickExpress.Domain.Entities.Lead;
 using ClickExpress.Domain.Entities.JobApplication;
 using ClickExpress.Domain.Entities.Document;
 using ClickExpress.Domain.Entities.SavedLoad;
+using ClickExpress.Domain.Entities.Notification;
 
 namespace ClickExpress.DataAccess.Context
 {
@@ -31,6 +32,7 @@ namespace ClickExpress.DataAccess.Context
         public DbSet<JobApplicationData> JobApplications { get; set; }
         public DbSet<DocumentData> Documents { get; set; }
         public DbSet<SavedLoadData> SavedLoads { get; set; }
+        public DbSet<NotificationData> Notifications { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -54,6 +56,7 @@ namespace ClickExpress.DataAccess.Context
             modelBuilder.Entity<JobApplicationData>().ToTable("JobApplications");
             modelBuilder.Entity<DocumentData>().ToTable("Documents");
             modelBuilder.Entity<SavedLoadData>().ToTable("SavedLoads");
+            modelBuilder.Entity<NotificationData>().ToTable("Notifications");
 
             modelBuilder.Entity<OrderItemData>()
                 .HasOne(oi => oi.Product).WithMany().HasForeignKey(oi => oi.ProductId)
