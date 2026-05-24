@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using ClickExpress.BusinessLogic.Interfaces;
+using ClickExpress.BusinessLogic.Helpers;
 using ClickExpress.Domain.Models.Lead;
 
 namespace ClickExpress.Api.Controller
@@ -11,11 +12,13 @@ namespace ClickExpress.Api.Controller
     public class LeadController : ControllerBase
     {
         private readonly ILeadActions _leadActions;
+        private readonly IEmailService _email;
         private readonly ILogger<LeadController> _logger;
 
-        public LeadController(ILeadActions leadActions, ILogger<LeadController> logger)
+        public LeadController(ILeadActions leadActions, IEmailService email, ILogger<LeadController> logger)
         {
             _leadActions = leadActions;
+            _email = email;
             _logger = logger;
         }
 
@@ -24,6 +27,14 @@ namespace ClickExpress.Api.Controller
         public IActionResult Submit([FromBody] CreateLeadDTO dto)
         {
             var result = _leadActions.ResponseSubmitLeadAction(dto);
+
+            _ = Task.Run(async () =>
+            {
+                await _email.SendLeadAlertAsync(dto.FullName, dto.Email, dto.Phone, dto.Origin, dto.Destination, dto.Equipment, dto.Message);
+                if (!string.IsNullOrWhiteSpace(dto.Email))
+                    await _email.SendLeadConfirmationAsync(dto.Email, dto.FullName, dto.Origin, dto.Destination, dto.Equipment);
+            });
+
             return Ok(new { result.Id, message = "Lead submitted" });
         }
 

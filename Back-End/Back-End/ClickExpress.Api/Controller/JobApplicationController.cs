@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using ClickExpress.BusinessLogic.Interfaces;
+using ClickExpress.BusinessLogic.Helpers;
 using ClickExpress.Domain.Models.JobApplication;
 
 namespace ClickExpress.Api.Controller
@@ -11,11 +12,13 @@ namespace ClickExpress.Api.Controller
     public class JobApplicationController : ControllerBase
     {
         private readonly IJobApplicationActions _jobApplicationActions;
+        private readonly IEmailService _email;
         private readonly ILogger<JobApplicationController> _logger;
 
-        public JobApplicationController(IJobApplicationActions jobApplicationActions, ILogger<JobApplicationController> logger)
+        public JobApplicationController(IJobApplicationActions jobApplicationActions, IEmailService email, ILogger<JobApplicationController> logger)
         {
             _jobApplicationActions = jobApplicationActions;
+            _email = email;
             _logger = logger;
         }
 
@@ -24,6 +27,14 @@ namespace ClickExpress.Api.Controller
         public IActionResult Submit([FromBody] CreateJobApplicationDTO dto)
         {
             var result = _jobApplicationActions.ResponseSubmitJobApplicationAction(dto);
+
+            _ = Task.Run(async () =>
+            {
+                await _email.SendJobApplicationAlertAsync(dto.FullName, dto.Email, dto.Phone, dto.Position, dto.Message);
+                if (!string.IsNullOrWhiteSpace(dto.Email))
+                    await _email.SendJobApplicationConfirmationAsync(dto.Email, dto.FullName, dto.Position);
+            });
+
             return Ok(new { result.Id, message = "Application submitted" });
         }
 

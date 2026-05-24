@@ -19,6 +19,7 @@ using ClickExpress.BusinessLogic.Functions.JobApplication;
 using ClickExpress.BusinessLogic.Functions.News;
 using ClickExpress.BusinessLogic.Functions.SavedLoad;
 using ClickExpress.Api.Middleware;
+using ClickExpress.BusinessLogic.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -63,6 +64,7 @@ builder.Services.AddScoped<ILeadActions, LeadFlow>();
 builder.Services.AddScoped<IJobApplicationActions, JobApplicationFlow>();
 builder.Services.AddScoped<INewsActions, NewsFlow>();
 builder.Services.AddScoped<ISavedLoadActions, SavedLoadFlow>();
+builder.Services.AddSingleton<IEmailService, SmtpEmailService>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
