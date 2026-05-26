@@ -8,5 +8,7 @@ namespace ClickExpress.BusinessLogic.Helpers
         Task SendJobApplicationConfirmationAsync(string toEmail, string applicantName, string position);
         Task SendJobApplicationAlertAsync(string applicantName, string email, string phone, string position, string experience);
         Task SendPasswordResetAsync(string toEmail, string resetLink);
+        Task SendOrderConfirmationAsync(string toEmail, string username, int orderId, string productName, decimal? totalPrice);
+        Task SendOrderStatusUpdateAsync(string toEmail, string username, int orderId, string newStatus, string productName);
     }
 }

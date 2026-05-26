@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using ClickExpress.Api.Filters;
 using ClickExpress.Api.Hubs;
+using ClickExpress.BusinessLogic.Helpers;
 using ClickExpress.BusinessLogic.Interfaces;
 using ClickExpress.DataAccess.Context;
 using ClickExpress.Domain.Entities.Order;
@@ -19,12 +20,14 @@ namespace ClickExpress.Api.Controller
     {
         private readonly IOrderActions _orderActions;
         private readonly IHubContext<OrderHub> _hub;
+        private readonly IEmailService _email;
         private readonly ILogger<OrderController> _logger;
 
-        public OrderController(IOrderActions orderActions, IHubContext<OrderHub> hub, ILogger<OrderController> logger)
+        public OrderController(IOrderActions orderActions, IHubContext<OrderHub> hub, IEmailService email, ILogger<OrderController> logger)
         {
             _orderActions = orderActions;
             _hub = hub;
+            _email = email;
             _logger = logger;
         }
 
@@ -34,6 +37,13 @@ namespace ClickExpress.Api.Controller
             if (username == null) return null;
             using var db = new UserContext();
             return db.Users.FirstOrDefault(u => u.Username == username)?.Id;
+        }
+
+        private (string? Email, string Username) GetUserContact(int userId)
+        {
+            using var db = new UserContext();
+            var u = db.Users.FirstOrDefault(u => u.Id == userId);
+            return (u?.Email, u?.Username ?? "");
         }
 
         [HttpGet]
@@ -67,7 +77,14 @@ namespace ClickExpress.Api.Controller
             if (userId == null) return Unauthorized();
             var result = _orderActions.ResponseCreateOrderAction(userId.Value, dto);
             if (!result.IsSuccess) return BadRequest(new { message = result.Message });
-            return CreatedAtAction(nameof(GetById), new { id = result.Id }, _orderActions.GetOrderByIdAction(result.Id));
+            var order = _orderActions.GetOrderByIdAction(result.Id);
+            if (order != null)
+            {
+                var (email, username) = GetUserContact(userId.Value);
+                if (!string.IsNullOrEmpty(email))
+                    _ = Task.Run(async () => await _email.SendOrderConfirmationAsync(email, username, order.Id, order.ProductName, order.TotalPrice));
+            }
+            return CreatedAtAction(nameof(GetById), new { id = result.Id }, order);
         }
 
         [HttpPost("checkout")]
@@ -111,7 +128,18 @@ namespace ClickExpress.Api.Controller
             db.CartItems.RemoveRange(cart.Items);
             db.SaveChanges();
 
-            return Ok(orderIds.Select(id => _orderActions.GetOrderByIdAction(id)));
+            var (userEmail, username) = GetUserContact(userId.Value);
+            var createdOrders = orderIds.Select(id => _orderActions.GetOrderByIdAction(id)!).ToList();
+            if (!string.IsNullOrEmpty(userEmail))
+            {
+                _ = Task.Run(async () =>
+                {
+                    foreach (var o in createdOrders)
+                        await _email.SendOrderConfirmationAsync(userEmail, username, o.Id, o.ProductName, o.TotalPrice);
+                });
+            }
+
+            return Ok(createdOrders);
         }
 
         [HttpGet("{id}/tracking")]
@@ -134,6 +162,9 @@ namespace ClickExpress.Api.Controller
             if (!result.IsSuccess) return NotFound(new { message = result.Message });
             await _hub.Clients.Group($"order-{id}").SendAsync("StatusChanged",
                 new { orderId = id, status = "Cancelled", updatedAt = DateTime.UtcNow });
+            var (email, username) = GetUserContact(userId.Value);
+            if (!string.IsNullOrEmpty(email))
+                _ = Task.Run(async () => await _email.SendOrderStatusUpdateAsync(email, username, id, "Cancelled", order.ProductName));
             return Ok(_orderActions.GetOrderByIdAction(id));
         }
 
@@ -151,12 +182,17 @@ namespace ClickExpress.Api.Controller
         [AdminActionFilter]
         public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateOrderStatusDTO dto)
         {
+            var order = _orderActions.GetOrderByIdAction(id);
+            if (order == null) return NotFound(new { message = $"Order {id} not found" });
             var result = _orderActions.ResponseUpdateOrderStatusAction(id, dto.Status);
             if (!result.IsSuccess) return NotFound(new { message = result.Message });
             var admin = User.FindFirst(ClaimTypes.Name)?.Value;
             _logger.LogInformation("Admin {Admin} changed order {Id} status to {Status}", admin, id, dto.Status);
             await _hub.Clients.Group($"order-{id}").SendAsync("StatusChanged",
                 new { orderId = id, status = dto.Status, updatedAt = DateTime.UtcNow });
+            var (email, username) = GetUserContact(order.UserId);
+            if (!string.IsNullOrEmpty(email))
+                _ = Task.Run(async () => await _email.SendOrderStatusUpdateAsync(email, username, id, dto.Status, order.ProductName));
             return Ok(_orderActions.GetOrderByIdAction(id));
         }
 

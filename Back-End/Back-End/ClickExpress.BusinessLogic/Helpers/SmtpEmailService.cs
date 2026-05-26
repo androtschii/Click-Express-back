@@ -163,5 +163,71 @@ namespace ClickExpress.BusinessLogic.Helpers
 </div>";
             await SendAsync(toEmail, subject, body);
         }
+
+        public async Task SendOrderConfirmationAsync(string toEmail, string username, int orderId, string productName, decimal? totalPrice)
+        {
+            var subject = $"Order #{orderId} confirmed — Click Express";
+            var priceRow = totalPrice.HasValue
+                ? $@"<div style=""display:flex;gap:8px;margin-bottom:8px""><span style=""color:#CC0000;min-width:110px"">Total:</span><span><strong>${totalPrice:N0}</strong></span></div>"
+                : "";
+            var body = $@"
+<div style=""font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#0a0a0a;color:#fff;padding:32px;border-radius:8px"">
+  <div style=""border-bottom:3px solid #CC0000;padding-bottom:16px;margin-bottom:24px"">
+    <h1 style=""margin:0;font-size:22px;color:#CC0000"">Click Express Inc</h1>
+  </div>
+  <h2 style=""font-size:18px;margin:0 0 12px"">Hi {username}, your order is placed!</h2>
+  <p style=""color:rgba(255,255,255,0.7);line-height:1.6"">
+    Your order has been received and is being reviewed by our dispatch team.
+  </p>
+  <div style=""background:#111;border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:16px;margin:20px 0"">
+    <div style=""display:flex;gap:8px;margin-bottom:8px""><span style=""color:#CC0000;min-width:110px"">Order #:</span><span><strong>{orderId}</strong></span></div>
+    <div style=""display:flex;gap:8px;margin-bottom:8px""><span style=""color:#CC0000;min-width:110px"">Load:</span><span>{productName}</span></div>
+    {priceRow}
+    <div style=""display:flex;gap:8px""><span style=""color:#CC0000;min-width:110px"">Status:</span><span style=""color:#f59e0b"">Pending</span></div>
+  </div>
+  <p style=""color:rgba(255,255,255,0.5);font-size:12px"">
+    Questions? Call us: <a href=""tel:+17862026599"" style=""color:#CC0000"">+1 786-202-6599</a>
+  </p>
+</div>";
+            await SendAsync(toEmail, subject, body);
+        }
+
+        public async Task SendOrderStatusUpdateAsync(string toEmail, string username, int orderId, string newStatus, string productName)
+        {
+            var subject = $"Order #{orderId} updated: {newStatus} — Click Express";
+            var statusColor = newStatus switch
+            {
+                "Approved"  => "#3b82f6",
+                "InTransit" => "#f97316",
+                "Delivered" => "#22c55e",
+                "Cancelled" => "#ef4444",
+                _           => "#f59e0b",
+            };
+            var statusMsg = newStatus switch
+            {
+                "Approved"  => "Your order has been approved and is being prepared for pickup.",
+                "InTransit" => "Great news — your load is now in transit!",
+                "Delivered" => "Your load has been delivered successfully. Thank you for choosing Click Express!",
+                "Cancelled" => "Your order has been cancelled. Please contact us if you have questions.",
+                _           => $"Your order status has been updated to <strong>{newStatus}</strong>.",
+            };
+            var body = $@"
+<div style=""font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#0a0a0a;color:#fff;padding:32px;border-radius:8px"">
+  <div style=""border-bottom:3px solid #CC0000;padding-bottom:16px;margin-bottom:24px"">
+    <h1 style=""margin:0;font-size:22px;color:#CC0000"">Click Express Inc</h1>
+  </div>
+  <h2 style=""font-size:18px;margin:0 0 12px"">Order #{orderId} — Status Update</h2>
+  <p style=""color:rgba(255,255,255,0.7);line-height:1.6"">Hi {username}, {statusMsg}</p>
+  <div style=""background:#111;border:1px solid rgba(255,255,255,0.08);border-radius:6px;padding:16px;margin:20px 0"">
+    <div style=""display:flex;gap:8px;margin-bottom:8px""><span style=""color:#CC0000;min-width:110px"">Order #:</span><span><strong>{orderId}</strong></span></div>
+    <div style=""display:flex;gap:8px;margin-bottom:8px""><span style=""color:#CC0000;min-width:110px"">Load:</span><span>{productName}</span></div>
+    <div style=""display:flex;gap:8px""><span style=""color:#CC0000;min-width:110px"">New Status:</span><span style=""color:{statusColor};font-weight:bold"">{newStatus}</span></div>
+  </div>
+  <p style=""color:rgba(255,255,255,0.5);font-size:12px"">
+    Questions? Call us: <a href=""tel:+17862026599"" style=""color:#CC0000"">+1 786-202-6599</a>
+  </p>
+</div>";
+            await SendAsync(toEmail, subject, body);
+        }
     }
 }
