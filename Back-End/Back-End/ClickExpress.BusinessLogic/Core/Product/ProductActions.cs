@@ -7,7 +7,8 @@ namespace ClickExpress.BusinessLogic.Core.Product
 {
     public class ProductActions
     {
-        protected (List<ProductDTO> Items, int Total) ExecuteGetAllProductsAction(string? search, string? category, int page, int pageSize)
+        protected (List<ProductDTO> Items, int Total) ExecuteGetAllProductsAction(
+            string? search, string? category, decimal? minPrice, decimal? maxPrice, string? sortBy, int page, int pageSize)
         {
             using (var db = new ProductContext())
             {
@@ -19,8 +20,24 @@ namespace ClickExpress.BusinessLogic.Core.Product
                 if (!string.IsNullOrWhiteSpace(category))
                     query = query.Where(p => p.Category == category);
 
+                if (minPrice.HasValue)
+                    query = query.Where(p => p.Price >= minPrice.Value);
+
+                if (maxPrice.HasValue)
+                    query = query.Where(p => p.Price <= maxPrice.Value);
+
                 int total = query.Count();
-                var items = query.OrderByDescending(p => p.CreatedAt)
+
+                query = sortBy switch
+                {
+                    "price_asc"  => query.OrderBy(p => p.Price),
+                    "price_desc" => query.OrderByDescending(p => p.Price),
+                    "oldest"     => query.OrderBy(p => p.CreatedAt),
+                    "popular"    => query.OrderByDescending(p => p.ViewCount),
+                    _            => query.OrderByDescending(p => p.CreatedAt),
+                };
+
+                var items = query
                     .Skip((page - 1) * pageSize).Take(pageSize)
                     .Select(p => new ProductDTO
                     {

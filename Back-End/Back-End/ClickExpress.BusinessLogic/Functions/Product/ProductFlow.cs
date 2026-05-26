@@ -7,8 +7,8 @@ namespace ClickExpress.BusinessLogic.Functions.Product
 {
     public class ProductFlow : ProductActions, IProductActions
     {
-        public (List<ProductDTO> Items, int Total) GetAllProductsAction(string? search, string? category, int page, int pageSize)
-            => ExecuteGetAllProductsAction(search, category, page, pageSize);
+        public (List<ProductDTO> Items, int Total) GetAllProductsAction(string? search, string? category, decimal? minPrice, decimal? maxPrice, string? sortBy, int page, int pageSize)
+            => ExecuteGetAllProductsAction(search, category, minPrice, maxPrice, sortBy, page, pageSize);
         public ProductDTO? GetProductByIdAction(int id) => ExecuteGetProductByIdAction(id);
         public ResponseAction ResponseCreateProductAction(CreateProductDTO dto) => ExecuteCreateProductAction(dto);
         public ResponseMsg ResponseUpdateProductAction(int id, UpdateProductDTO dto) => ExecuteUpdateProductAction(id, dto);

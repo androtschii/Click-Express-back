@@ -5,7 +5,7 @@ namespace ClickExpress.BusinessLogic.Interfaces
 {
     public interface IProductActions
     {
-        (List<ProductDTO> Items, int Total) GetAllProductsAction(string? search, string? category, int page, int pageSize);
+        (List<ProductDTO> Items, int Total) GetAllProductsAction(string? search, string? category, decimal? minPrice, decimal? maxPrice, string? sortBy, int page, int pageSize);
         ProductDTO? GetProductByIdAction(int id);
         ResponseAction ResponseCreateProductAction(CreateProductDTO dto);
         ResponseMsg ResponseUpdateProductAction(int id, UpdateProductDTO dto);

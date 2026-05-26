@@ -21,12 +21,23 @@ namespace ClickExpress.Api.Controller
 
         [HttpGet]
         [AllowAnonymous]
-        public IActionResult GetAll([FromQuery] string? search, [FromQuery] string? category,
-            [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public IActionResult GetAll(
+            [FromQuery] string? search,
+            [FromQuery] string? category,
+            [FromQuery] decimal? minPrice,
+            [FromQuery] decimal? maxPrice,
+            [FromQuery] string? sortBy,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
         {
             if (page < 1) page = 1;
             if (pageSize < 1 || pageSize > 100) pageSize = 10;
-            var (items, total) = _productActions.GetAllProductsAction(search, category, page, pageSize);
+
+            var validSorts = new[] { "newest", "oldest", "price_asc", "price_desc", "popular" };
+            if (!string.IsNullOrWhiteSpace(sortBy) && !validSorts.Contains(sortBy))
+                return BadRequest(new { message = $"Invalid sortBy. Allowed: {string.Join(", ", validSorts)}" });
+
+            var (items, total) = _productActions.GetAllProductsAction(search, category, minPrice, maxPrice, sortBy, page, pageSize);
             return Ok(new
             {
                 Total = total, Page = page, PageSize = pageSize,
