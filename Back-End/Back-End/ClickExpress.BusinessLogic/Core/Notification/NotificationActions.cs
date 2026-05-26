@@ -2,6 +2,7 @@ using ClickExpress.DataAccess.Context;
 using ClickExpress.Domain.Entities.Notification;
 using ClickExpress.Domain.Models.Notification;
 using ClickExpress.Domain.Models.Base;
+using ClickExpress.Domain.Entities.User;
 
 namespace ClickExpress.BusinessLogic.Core.Notification
 {
@@ -54,6 +55,46 @@ namespace ClickExpress.BusinessLogic.Core.Notification
             db.Notifications.Remove(n);
             db.SaveChanges();
             return new ResponseMsg { IsSuccess = true, Message = "Deleted" };
+        }
+
+        protected ResponseMsg ExecuteSendNotificationAction(CreateNotificationDTO dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Title) || string.IsNullOrWhiteSpace(dto.Body))
+                return new ResponseMsg { IsSuccess = false, Message = "Title and body are required" };
+
+            using var orderDb = new OrderContext();
+
+            if (dto.UserId.HasValue)
+            {
+                orderDb.Notifications.Add(new NotificationData
+                {
+                    UserId = dto.UserId.Value,
+                    Title = dto.Title,
+                    Body = dto.Body,
+                    Type = dto.Type,
+                    CreatedAt = DateTime.UtcNow,
+                });
+                orderDb.SaveChanges();
+                return new ResponseMsg { IsSuccess = true, Message = "Notification sent" };
+            }
+
+            List<int> userIds;
+            using (var userDb = new UserContext())
+                userIds = userDb.Users.Where(u => u.IsActive).Select(u => u.Id).ToList();
+
+            foreach (var uid in userIds)
+            {
+                orderDb.Notifications.Add(new NotificationData
+                {
+                    UserId = uid,
+                    Title = dto.Title,
+                    Body = dto.Body,
+                    Type = dto.Type,
+                    CreatedAt = DateTime.UtcNow,
+                });
+            }
+            orderDb.SaveChanges();
+            return new ResponseMsg { IsSuccess = true, Message = $"Sent to {userIds.Count} users" };
         }
     }
 }

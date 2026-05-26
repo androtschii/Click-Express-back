@@ -10,5 +10,6 @@ namespace ClickExpress.BusinessLogic.Interfaces
         ResponseMsg MarkReadAction(int id, int userId);
         ResponseMsg MarkAllReadAction(int userId);
         ResponseMsg DeleteAction(int id, int userId);
+        ResponseMsg SendNotificationAction(CreateNotificationDTO dto);
     }
 }

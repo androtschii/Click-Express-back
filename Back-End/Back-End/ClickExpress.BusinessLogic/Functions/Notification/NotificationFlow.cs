@@ -12,5 +12,6 @@ namespace ClickExpress.BusinessLogic.Functions.Notification
         public ResponseMsg MarkReadAction(int id, int userId) => ExecuteMarkReadAction(id, userId);
         public ResponseMsg MarkAllReadAction(int userId) => ExecuteMarkAllReadAction(userId);
         public ResponseMsg DeleteAction(int id, int userId) => ExecuteDeleteAction(id, userId);
+        public ResponseMsg SendNotificationAction(CreateNotificationDTO dto) => ExecuteSendNotificationAction(dto);
     }
 }

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using ClickExpress.BusinessLogic.Interfaces;
+using ClickExpress.Domain.Models.Notification;
 
 namespace ClickExpress.Api.Controller
 {
@@ -46,6 +47,15 @@ namespace ClickExpress.Api.Controller
             var result = _actions.DeleteAction(id, UserId);
             if (!result.IsSuccess) return NotFound(new { message = result.Message });
             return NoContent();
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public IActionResult Send([FromBody] CreateNotificationDTO dto)
+        {
+            var result = _actions.SendNotificationAction(dto);
+            if (!result.IsSuccess) return BadRequest(new { message = result.Message });
+            return Ok(new { message = result.Message });
         }
     }
 }
