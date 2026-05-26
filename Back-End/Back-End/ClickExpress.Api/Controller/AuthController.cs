@@ -88,23 +88,21 @@ namespace ClickExpress.Api.Controller
         [HttpPost("refresh")]
         public IActionResult Refresh([FromBody] RefreshRequest req)
         {
-            var user = _userActions.GetUserByRefreshTokenAction(req.RefreshToken);
+            if (string.IsNullOrWhiteSpace(req.RefreshToken))
+                return BadRequest(new { message = "Refresh token is required" });
 
-            using (var db = new UserContext())
-            {
-                var u = db.Users.FirstOrDefault(u => u.RefreshToken == req.RefreshToken);
-                if (u == null || u.RefreshTokenExpiry == null || u.RefreshTokenExpiry < DateTime.Now)
-                    return Unauthorized(new { message = "Refresh token is invalid" });
+            using var db = new UserContext();
+            var u = db.Users.FirstOrDefault(u => u.RefreshToken == req.RefreshToken);
+            if (u == null || u.RefreshTokenExpiry == null || u.RefreshTokenExpiry < DateTime.Now)
+                return Unauthorized(new { message = "Refresh token is invalid or expired" });
 
-                var newToken = TokenHelper.GenerateJwtToken(u.Username, u.Role,
-                    _config["Jwt:Key"]!, _config["Jwt:Issuer"]!, _config["Jwt:Audience"]!);
-                var newRefresh = TokenHelper.GenerateRefreshToken();
-                u.RefreshToken = newRefresh;
-                u.RefreshTokenExpiry = DateTime.Now.AddDays(7);
-                db.SaveChanges();
+            var newToken = TokenHelper.GenerateJwtToken(u.Username, u.Role,
+                _config["Jwt:Key"]!, _config["Jwt:Issuer"]!, _config["Jwt:Audience"]!);
+            var newRefresh = TokenHelper.GenerateRefreshToken();
+            _userActions.ResponseSaveRefreshTokenAction(u.Id, newRefresh, DateTime.Now.AddDays(7));
 
-                return Ok(new { token = newToken, refreshToken = newRefresh });
-            }
+            _logger.LogInformation("Token refreshed for {Username}", u.Username);
+            return Ok(new { token = newToken, refreshToken = newRefresh, username = u.Username, role = u.Role });
         }
 
         [HttpPost("logout")]
