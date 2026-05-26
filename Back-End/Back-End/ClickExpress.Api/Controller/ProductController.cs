@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using ClickExpress.BusinessLogic.Helpers;
 using ClickExpress.BusinessLogic.Interfaces;
 using ClickExpress.Domain.Models.Product;
 
@@ -13,16 +14,18 @@ namespace ClickExpress.Api.Controller
         private readonly IProductActions _productActions;
         private readonly IWebHostEnvironment _env;
         private readonly ILogger<ProductController> _logger;
+        private readonly IAuditLogService _audit;
 
         private static readonly HashSet<string> AllowedImageExtensions =
             new(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
         private const long MaxImageSize = 5 * 1024 * 1024; // 5 MB
 
-        public ProductController(IProductActions productActions, IWebHostEnvironment env, ILogger<ProductController> logger)
+        public ProductController(IProductActions productActions, IWebHostEnvironment env, ILogger<ProductController> logger, IAuditLogService audit)
         {
             _productActions = productActions;
             _env = env;
             _logger = logger;
+            _audit = audit;
         }
 
         [HttpGet]
@@ -67,8 +70,9 @@ namespace ClickExpress.Api.Controller
         {
             var result = _productActions.ResponseCreateProductAction(dto);
             if (!result.IsSuccess) return BadRequest(new { message = result.Message });
-            var admin = User.FindFirst(ClaimTypes.Name)?.Value;
+            var admin = User.FindFirst(ClaimTypes.Name)?.Value ?? "unknown";
             _logger.LogInformation("Admin {Admin} created product {Id}", admin, result.Id);
+            _audit.Log("Create", "Product", result.Id, admin);
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, _productActions.GetProductByIdAction(result.Id));
         }
 
@@ -78,6 +82,8 @@ namespace ClickExpress.Api.Controller
         {
             var result = _productActions.ResponseUpdateProductAction(id, dto);
             if (!result.IsSuccess) return NotFound(new { message = result.Message });
+            var admin = User.FindFirst(ClaimTypes.Name)?.Value ?? "unknown";
+            _audit.Log("Update", "Product", id, admin);
             return Ok(_productActions.GetProductByIdAction(id));
         }
 
@@ -87,6 +93,8 @@ namespace ClickExpress.Api.Controller
         {
             var result = _productActions.ResponseUpdatePriceAction(id, dto.Price);
             if (!result.IsSuccess) return NotFound(new { message = result.Message });
+            var admin = User.FindFirst(ClaimTypes.Name)?.Value ?? "unknown";
+            _audit.Log("Update", "Product", id, admin, $"Price changed to {dto.Price}");
             return Ok(_productActions.GetProductByIdAction(id));
         }
 
@@ -105,6 +113,8 @@ namespace ClickExpress.Api.Controller
         {
             var result = _productActions.ResponseToggleActiveAction(id);
             if (!result.IsSuccess) return NotFound(new { message = result.Message });
+            var admin = User.FindFirst(ClaimTypes.Name)?.Value ?? "unknown";
+            _audit.Log("Update", "Product", id, admin, result.Message);
             return Ok(new { message = result.Message });
         }
 
@@ -114,6 +124,8 @@ namespace ClickExpress.Api.Controller
         {
             var result = _productActions.ResponseUpdateStockAction(id, dto.Quantity);
             if (!result.IsSuccess) return NotFound(new { message = result.Message });
+            var admin = User.FindFirst(ClaimTypes.Name)?.Value ?? "unknown";
+            _audit.Log("Update", "Product", id, admin, $"Stock changed to {dto.Quantity}");
             return Ok(_productActions.GetProductByIdAction(id));
         }
 
@@ -171,8 +183,9 @@ namespace ClickExpress.Api.Controller
             var imageUrl = $"{Request.Scheme}://{Request.Host}/uploads/products/{fileName}";
             _productActions.ResponseUpdateImageAction(id, imageUrl);
 
-            var admin = User.FindFirst(ClaimTypes.Name)?.Value;
+            var admin = User.FindFirst(ClaimTypes.Name)?.Value ?? "unknown";
             _logger.LogInformation("Admin {Admin} uploaded image for product {Id}: {Url}", admin, id, imageUrl);
+            _audit.Log("Upload", "Product", id, admin, imageUrl);
 
             return Ok(_productActions.GetProductByIdAction(id));
         }
@@ -183,8 +196,9 @@ namespace ClickExpress.Api.Controller
         {
             var result = _productActions.ResponseDeleteProductAction(id);
             if (!result.IsSuccess) return NotFound(new { message = result.Message });
-            var admin = User.FindFirst(ClaimTypes.Name)?.Value;
+            var admin = User.FindFirst(ClaimTypes.Name)?.Value ?? "unknown";
             _logger.LogWarning("Admin {Admin} soft-deleted product {Id}", admin, id);
+            _audit.Log("Delete", "Product", id, admin);
             return NoContent();
         }
 
@@ -198,8 +212,9 @@ namespace ClickExpress.Api.Controller
         {
             var result = _productActions.RestoreProductAction(id);
             if (!result.IsSuccess) return NotFound(new { message = result.Message });
-            var admin = User.FindFirst(ClaimTypes.Name)?.Value;
+            var admin = User.FindFirst(ClaimTypes.Name)?.Value ?? "unknown";
             _logger.LogInformation("Admin {Admin} restored product {Id}", admin, id);
+            _audit.Log("Restore", "Product", id, admin);
             return Ok(_productActions.GetProductByIdAction(id));
         }
     }

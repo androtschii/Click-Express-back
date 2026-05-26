@@ -69,6 +69,7 @@ builder.Services.AddScoped<INewsActions, NewsFlow>();
 builder.Services.AddScoped<ISavedLoadActions, SavedLoadFlow>();
 builder.Services.AddScoped<INotificationActions, NotificationFlow>();
 builder.Services.AddSingleton<IEmailService, SmtpEmailService>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddSignalR();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -203,6 +204,16 @@ using (var db = new OrderContext())
             ALTER TABLE Drivers ADD IsDeleted BIT NOT NULL DEFAULT 0;
         IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Drivers' AND COLUMN_NAME='DeletedAt')
             ALTER TABLE Drivers ADD DeletedAt DATETIME2 NULL;
+        IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='AuditLogs' AND xtype='U')
+        CREATE TABLE AuditLogs (
+            Id INT IDENTITY(1,1) PRIMARY KEY,
+            Action NVARCHAR(50) NOT NULL,
+            EntityType NVARCHAR(50) NOT NULL,
+            EntityId INT NOT NULL,
+            Username NVARCHAR(100) NOT NULL,
+            Details NVARCHAR(500) NULL,
+            Timestamp DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+        );
     ");
 }
 

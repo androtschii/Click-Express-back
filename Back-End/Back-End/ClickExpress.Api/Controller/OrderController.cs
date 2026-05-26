@@ -22,13 +22,15 @@ namespace ClickExpress.Api.Controller
         private readonly IHubContext<OrderHub> _hub;
         private readonly IEmailService _email;
         private readonly ILogger<OrderController> _logger;
+        private readonly IAuditLogService _audit;
 
-        public OrderController(IOrderActions orderActions, IHubContext<OrderHub> hub, IEmailService email, ILogger<OrderController> logger)
+        public OrderController(IOrderActions orderActions, IHubContext<OrderHub> hub, IEmailService email, ILogger<OrderController> logger, IAuditLogService audit)
         {
             _orderActions = orderActions;
             _hub = hub;
             _email = email;
             _logger = logger;
+            _audit = audit;
         }
 
         private int? GetUserId()
@@ -186,8 +188,9 @@ namespace ClickExpress.Api.Controller
             if (order == null) return NotFound(new { message = $"Order {id} not found" });
             var result = _orderActions.ResponseUpdateOrderStatusAction(id, dto.Status);
             if (!result.IsSuccess) return NotFound(new { message = result.Message });
-            var admin = User.FindFirst(ClaimTypes.Name)?.Value;
+            var admin = User.FindFirst(ClaimTypes.Name)?.Value ?? "unknown";
             _logger.LogInformation("Admin {Admin} changed order {Id} status to {Status}", admin, id, dto.Status);
+            _audit.Log("StatusChange", "Order", id, admin, $"Status changed to {dto.Status}");
             await _hub.Clients.Group($"order-{id}").SendAsync("StatusChanged",
                 new { orderId = id, status = dto.Status, updatedAt = DateTime.UtcNow });
             var (email, username) = GetUserContact(order.UserId);
