@@ -146,6 +146,37 @@ namespace ClickExpress.Api.Controller
             return Ok(new { message = "If the email is registered, a reset link has been sent" });
         }
 
+        [HttpPost("change-password")]
+        [Authorize]
+        public IActionResult ChangePassword([FromBody] ChangePasswordRequest req)
+        {
+            if (string.IsNullOrWhiteSpace(req.CurrentPassword) || string.IsNullOrWhiteSpace(req.NewPassword))
+                return BadRequest(new { message = "Both passwords are required" });
+
+            if (req.NewPassword.Length < 8)
+                return BadRequest(new { message = "New password must be at least 8 characters" });
+
+            var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            if (username == null) return Unauthorized();
+
+            using (var db = new UserContext())
+            {
+                var u = db.Users.FirstOrDefault(u => u.Username == username && u.IsActive);
+                if (u == null) return Unauthorized();
+
+                if (!BCrypt.Net.BCrypt.Verify(req.CurrentPassword, u.PasswordHash))
+                    return BadRequest(new { message = "Current password is incorrect" });
+
+                u.PasswordHash = BCrypt.Net.BCrypt.HashPassword(req.NewPassword);
+                u.RefreshToken = null;
+                u.RefreshTokenExpiry = null;
+                db.SaveChanges();
+
+                _logger.LogInformation("User {Username} changed password", username);
+            }
+            return Ok(new { message = "Password updated" });
+        }
+
         [HttpPost("reset-password")]
         public IActionResult ResetPassword([FromBody] ResetPasswordRequest req)
         {
@@ -177,4 +208,5 @@ namespace ClickExpress.Api.Controller
     public class RefreshRequest { public string RefreshToken { get; set; } = ""; }
     public class ForgotPasswordRequest { public string Email { get; set; } = ""; }
     public class ResetPasswordRequest { public string Token { get; set; } = ""; public string NewPassword { get; set; } = ""; }
+    public class ChangePasswordRequest { public string CurrentPassword { get; set; } = ""; public string NewPassword { get; set; } = ""; }
 }
