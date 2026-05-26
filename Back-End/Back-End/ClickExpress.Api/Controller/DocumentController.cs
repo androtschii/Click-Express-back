@@ -69,6 +69,21 @@ namespace ClickExpress.Api.Controller
                 UploadedByUsername = saved.UploadedByUser.Username, saved.UploadedAt });
         }
 
+        [HttpGet]
+        public IActionResult GetMine()
+        {
+            var userId = GetUserId();
+            if (userId == null) return Unauthorized();
+            using var db = new OrderContext();
+            var docs = db.Documents.Include(d => d.UploadedByUser)
+                .Where(d => d.UploadedBy == userId.Value)
+                .OrderByDescending(d => d.UploadedAt)
+                .ToList();
+            return Ok(docs.Select(d => new { d.Id, d.Type, d.Url, d.OrderId, d.UploadedBy,
+                UploadedByUsername = d.UploadedByUser.Username, d.UploadedAt,
+                FileName = Path.GetFileName(d.Url) }));
+        }
+
         [HttpGet("order/{orderId}")]
         public IActionResult GetByOrder(int orderId)
         {
@@ -76,7 +91,57 @@ namespace ClickExpress.Api.Controller
             var docs = db.Documents.Include(d => d.UploadedByUser)
                 .Where(d => d.OrderId == orderId).OrderByDescending(d => d.UploadedAt).ToList();
             return Ok(docs.Select(d => new { d.Id, d.Type, d.Url, d.OrderId, d.UploadedBy,
-                UploadedByUsername = d.UploadedByUser.Username, d.UploadedAt }));
+                UploadedByUsername = d.UploadedByUser.Username, d.UploadedAt,
+                FileName = Path.GetFileName(d.Url) }));
+        }
+
+        [HttpGet("{id}/download")]
+        public IActionResult Download(int id)
+        {
+            var userId = GetUserId();
+            if (userId == null) return Unauthorized();
+
+            using var db = new OrderContext();
+            var doc = db.Documents.FirstOrDefault(d => d.Id == id && d.UploadedBy == userId.Value);
+            if (doc == null) return NotFound(new { message = "Document not found" });
+
+            var webRoot = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var fullPath = Path.Combine(webRoot, doc.Url.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+            if (!System.IO.File.Exists(fullPath))
+                return NotFound(new { message = "File not found on disk" });
+
+            var ext = Path.GetExtension(fullPath).ToLowerInvariant();
+            var contentType = ext switch
+            {
+                ".pdf"  => "application/pdf",
+                ".png"  => "image/png",
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".doc"  => "application/msword",
+                ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                _       => "application/octet-stream"
+            };
+            var fileName = Path.GetFileName(fullPath);
+            return PhysicalFile(fullPath, contentType, fileName);
+        }
+
+        [HttpDelete("{id}")]
+        public IActionResult Delete(int id)
+        {
+            var userId = GetUserId();
+            if (userId == null) return Unauthorized();
+
+            using var db = new OrderContext();
+            var doc = db.Documents.FirstOrDefault(d => d.Id == id && d.UploadedBy == userId.Value);
+            if (doc == null) return NotFound(new { message = "Document not found" });
+
+            var webRoot = _env.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            var fullPath = Path.Combine(webRoot, doc.Url.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+            if (System.IO.File.Exists(fullPath))
+                System.IO.File.Delete(fullPath);
+
+            db.Documents.Remove(doc);
+            db.SaveChanges();
+            return NoContent();
         }
     }
 
