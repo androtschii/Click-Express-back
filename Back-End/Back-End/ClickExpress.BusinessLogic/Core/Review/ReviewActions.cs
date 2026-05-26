@@ -110,5 +110,29 @@ namespace ClickExpress.BusinessLogic.Core.Review
                 return new ResponseMsg { IsSuccess = true, Message = "Review deleted!" };
             }
         }
+
+        protected ResponseMsg ExecuteUpdateReviewAction(int id, int userId, UpdateReviewDTO dto)
+        {
+            if (dto.Rating < 1 || dto.Rating > 5)
+                return new ResponseMsg { IsSuccess = false, Message = "Rating must be between 1 and 5!" };
+
+            if (string.IsNullOrWhiteSpace(dto.Text))
+                return new ResponseMsg { IsSuccess = false, Message = "Text is required!" };
+
+            using (var db = new OrderContext())
+            {
+                var review = db.Reviews.FirstOrDefault(r => r.Id == id && r.UserId == userId);
+                if (review == null)
+                    return new ResponseMsg { IsSuccess = false, Message = "Review not found!" };
+
+                review.Rating = dto.Rating;
+                review.Text = dto.Text;
+                review.Role = dto.Role;
+                review.Location = dto.Location;
+                review.IsApproved = false;
+                db.SaveChanges();
+                return new ResponseMsg { IsSuccess = true, Message = "Review updated!" };
+            }
+        }
     }
 }

@@ -14,5 +14,6 @@ namespace ClickExpress.BusinessLogic.Functions.Review
         public ResponseMsg ResponseRejectReviewAction(int id) => ExecuteRejectReviewAction(id);
         public int GetPendingCountAction() => ExecuteGetPendingCountAction();
         public ResponseMsg ResponseDeleteReviewAction(int id) => ExecuteDeleteReviewAction(id);
+        public ResponseMsg ResponseUpdateReviewAction(int id, int userId, UpdateReviewDTO dto) => ExecuteUpdateReviewAction(id, userId, dto);
     }
 }

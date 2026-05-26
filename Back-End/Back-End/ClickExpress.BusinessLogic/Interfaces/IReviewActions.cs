@@ -12,5 +12,6 @@ namespace ClickExpress.BusinessLogic.Interfaces
         ResponseMsg ResponseRejectReviewAction(int id);
         int GetPendingCountAction();
         ResponseMsg ResponseDeleteReviewAction(int id);
+        ResponseMsg ResponseUpdateReviewAction(int id, int userId, UpdateReviewDTO dto);
     }
 }

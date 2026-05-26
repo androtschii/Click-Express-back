@@ -78,6 +78,17 @@ namespace ClickExpress.Api.Controller
             return Ok(new { id, isApproved = false });
         }
 
+        [HttpPut("{id}")]
+        [Authorize]
+        public IActionResult Update(int id, [FromBody] UpdateReviewDTO dto)
+        {
+            var userId = GetUserId();
+            if (userId == null) return Unauthorized();
+            var result = _reviewActions.ResponseUpdateReviewAction(id, userId.Value, dto);
+            if (!result.IsSuccess) return NotFound(new { message = result.Message });
+            return Ok(new { id, isApproved = false });
+        }
+
         [HttpDelete("{id}")]
         [Authorize]
         public IActionResult Delete(int id)
