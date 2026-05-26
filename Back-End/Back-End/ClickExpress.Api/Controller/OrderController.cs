@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using ClickExpress.Api.Filters;
+using ClickExpress.Api.Hubs;
 using ClickExpress.BusinessLogic.Interfaces;
 using ClickExpress.DataAccess.Context;
 using ClickExpress.Domain.Entities.Order;
@@ -16,11 +18,13 @@ namespace ClickExpress.Api.Controller
     public class OrderController : ControllerBase
     {
         private readonly IOrderActions _orderActions;
+        private readonly IHubContext<OrderHub> _hub;
         private readonly ILogger<OrderController> _logger;
 
-        public OrderController(IOrderActions orderActions, ILogger<OrderController> logger)
+        public OrderController(IOrderActions orderActions, IHubContext<OrderHub> hub, ILogger<OrderController> logger)
         {
             _orderActions = orderActions;
+            _hub = hub;
             _logger = logger;
         }
 
@@ -119,7 +123,7 @@ namespace ClickExpress.Api.Controller
         }
 
         [HttpPatch("{id}/cancel")]
-        public IActionResult CancelOrder(int id)
+        public async Task<IActionResult> CancelOrder(int id)
         {
             var userId = GetUserId();
             if (userId == null) return Unauthorized();
@@ -128,6 +132,8 @@ namespace ClickExpress.Api.Controller
             if (order.UserId != userId.Value) return Forbid();
             var result = _orderActions.ResponseUpdateOrderStatusAction(id, "Cancelled");
             if (!result.IsSuccess) return NotFound(new { message = result.Message });
+            await _hub.Clients.Group($"order-{id}").SendAsync("StatusChanged",
+                new { orderId = id, status = "Cancelled", updatedAt = DateTime.UtcNow });
             return Ok(_orderActions.GetOrderByIdAction(id));
         }
 
@@ -143,12 +149,14 @@ namespace ClickExpress.Api.Controller
         [HttpPatch("{id}/status")]
         [Authorize(Roles = "Admin")]
         [AdminActionFilter]
-        public IActionResult UpdateStatus(int id, [FromBody] UpdateOrderStatusDTO dto)
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateOrderStatusDTO dto)
         {
             var result = _orderActions.ResponseUpdateOrderStatusAction(id, dto.Status);
             if (!result.IsSuccess) return NotFound(new { message = result.Message });
             var admin = User.FindFirst(ClaimTypes.Name)?.Value;
             _logger.LogInformation("Admin {Admin} changed order {Id} status to {Status}", admin, id, dto.Status);
+            await _hub.Clients.Group($"order-{id}").SendAsync("StatusChanged",
+                new { orderId = id, status = dto.Status, updatedAt = DateTime.UtcNow });
             return Ok(_orderActions.GetOrderByIdAction(id));
         }
 

@@ -21,6 +21,7 @@ using ClickExpress.BusinessLogic.Functions.News;
 using ClickExpress.BusinessLogic.Functions.SavedLoad;
 using ClickExpress.BusinessLogic.Functions.Notification;
 using ClickExpress.Api.Middleware;
+using ClickExpress.Api.Hubs;
 using ClickExpress.BusinessLogic.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -68,6 +69,7 @@ builder.Services.AddScoped<INewsActions, NewsFlow>();
 builder.Services.AddScoped<ISavedLoadActions, SavedLoadFlow>();
 builder.Services.AddScoped<INotificationActions, NotificationFlow>();
 builder.Services.AddSingleton<IEmailService, SmtpEmailService>();
+builder.Services.AddSignalR();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -83,6 +85,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!))
         };
+        // SignalR sends the token via query string because WebSockets don't support headers
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var token = context.Request.Query["access_token"];
+                if (!string.IsNullOrEmpty(token) &&
+                    context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = token;
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
 
 var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? [];
@@ -92,8 +108,9 @@ builder.Services.AddCors(options =>
     options.AddDefaultPolicy(policy =>
     {
         policy.WithOrigins(allowedOrigins)
-              .WithHeaders("Content-Type", "Authorization", "X-Requested-With")
-              .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS");
+              .AllowAnyHeader()
+              .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+              .AllowCredentials(); // required for SignalR WebSocket handshake
     });
 });
 
@@ -198,5 +215,6 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<OrderHub>("/hubs/orders");
 
 app.Run();
