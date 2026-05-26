@@ -61,6 +61,7 @@ namespace ClickExpress.Api.Controller
         }
 
         [HttpPost("register")]
+        [EnableRateLimiting("register")]
         public IActionResult Register([FromBody] RegisterRequest request)
         {
             var dto = new UserRegDTO
@@ -86,6 +87,7 @@ namespace ClickExpress.Api.Controller
         }
 
         [HttpPost("refresh")]
+        [EnableRateLimiting("refresh")]
         public IActionResult Refresh([FromBody] RefreshRequest req)
         {
             if (string.IsNullOrWhiteSpace(req.RefreshToken))
@@ -176,6 +178,7 @@ namespace ClickExpress.Api.Controller
         }
 
         [HttpPost("reset-password")]
+        [EnableRateLimiting("reset")]
         public IActionResult ResetPassword([FromBody] ResetPasswordRequest req)
         {
             if (string.IsNullOrWhiteSpace(req.Token) || string.IsNullOrWhiteSpace(req.NewPassword))

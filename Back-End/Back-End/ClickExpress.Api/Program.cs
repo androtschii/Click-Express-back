@@ -116,14 +116,57 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddRateLimiter(options =>
 {
-    options.AddFixedWindowLimiter("auth", opt =>
-    {
-        opt.PermitLimit = 5;
-        opt.Window = TimeSpan.FromMinutes(1);
-        opt.QueueLimit = 0;
-        opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-    });
+    static string IpKey(HttpContext ctx) =>
+        ctx.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+    // Login / forgot-password: 5 attempts per minute per IP
+    options.AddPolicy("auth", ctx =>
+        RateLimitPartition.GetFixedWindowLimiter(IpKey(ctx), _ =>
+            new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            }));
+
+    // Register: 3 accounts per 10 minutes per IP
+    options.AddPolicy("register", ctx =>
+        RateLimitPartition.GetFixedWindowLimiter(IpKey(ctx), _ =>
+            new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 3,
+                Window = TimeSpan.FromMinutes(10),
+                QueueLimit = 0,
+            }));
+
+    // Token refresh: 20 per minute per IP (sliding to smooth bursts)
+    options.AddPolicy("refresh", ctx =>
+        RateLimitPartition.GetSlidingWindowLimiter(IpKey(ctx), _ =>
+            new SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = 20,
+                Window = TimeSpan.FromMinutes(1),
+                SegmentsPerWindow = 4,
+                QueueLimit = 0,
+            }));
+
+    // Reset password: 3 attempts per 5 minutes per IP
+    options.AddPolicy("reset", ctx =>
+        RateLimitPartition.GetFixedWindowLimiter(IpKey(ctx), _ =>
+            new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 3,
+                Window = TimeSpan.FromMinutes(5),
+                QueueLimit = 0,
+            }));
+
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (ctx, token) =>
+    {
+        ctx.HttpContext.Response.ContentType = "application/json";
+        await ctx.HttpContext.Response.WriteAsync(
+            "{\"message\":\"Too many requests. Please try again later.\"}", token);
+    };
 });
 
 var app = builder.Build();
