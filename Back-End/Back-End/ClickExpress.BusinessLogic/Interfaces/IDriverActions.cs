@@ -11,5 +11,7 @@ namespace ClickExpress.BusinessLogic.Interfaces
         ResponseMsg ResponseUpdateDriverAction(int id, UpdateDriverDTO dto);
         ResponseMsg ResponsePatchDriverStatusAction(int id, string status);
         ResponseMsg ResponseDeleteDriverAction(int id);
+        List<DriverDTO> GetDeletedDriversAction();
+        ResponseMsg RestoreDriverAction(int id);
     }
 }

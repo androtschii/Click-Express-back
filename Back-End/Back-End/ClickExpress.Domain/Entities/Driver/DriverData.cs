@@ -11,6 +11,8 @@ namespace ClickExpress.Domain.Entities.Driver
         public string Status { get; set; } = "Active";
         public int? VehicleId { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public bool IsDeleted { get; set; } = false;
+        public DateTime? DeletedAt { get; set; }
 
         public VehicleData? Vehicle { get; set; }
     }

@@ -184,8 +184,23 @@ namespace ClickExpress.Api.Controller
             var result = _productActions.ResponseDeleteProductAction(id);
             if (!result.IsSuccess) return NotFound(new { message = result.Message });
             var admin = User.FindFirst(ClaimTypes.Name)?.Value;
-            _logger.LogWarning("Admin {Admin} deleted product {Id}", admin, id);
+            _logger.LogWarning("Admin {Admin} soft-deleted product {Id}", admin, id);
             return NoContent();
+        }
+
+        [HttpGet("deleted")]
+        [Authorize(Roles = "Admin")]
+        public IActionResult GetDeleted() => Ok(_productActions.GetDeletedProductsAction());
+
+        [HttpPost("{id}/restore")]
+        [Authorize(Roles = "Admin")]
+        public IActionResult Restore(int id)
+        {
+            var result = _productActions.RestoreProductAction(id);
+            if (!result.IsSuccess) return NotFound(new { message = result.Message });
+            var admin = User.FindFirst(ClaimTypes.Name)?.Value;
+            _logger.LogInformation("Admin {Admin} restored product {Id}", admin, id);
+            return Ok(_productActions.GetProductByIdAction(id));
         }
     }
 }

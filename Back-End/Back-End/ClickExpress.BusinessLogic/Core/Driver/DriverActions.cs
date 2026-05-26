@@ -12,7 +12,7 @@ namespace ClickExpress.BusinessLogic.Core.Driver
         {
             using (var db = new OrderContext())
             {
-                var query = db.Drivers.Include(d => d.Vehicle).AsQueryable();
+                var query = db.Drivers.Include(d => d.Vehicle).Where(d => !d.IsDeleted).AsQueryable();
                 if (!string.IsNullOrWhiteSpace(status)) query = query.Where(d => d.Status == status);
 
                 return query.OrderBy(d => d.FullName).Select(d => MapToDTO(d)).ToList();
@@ -23,7 +23,7 @@ namespace ClickExpress.BusinessLogic.Core.Driver
         {
             using (var db = new OrderContext())
             {
-                var d = db.Drivers.Include(d => d.Vehicle).FirstOrDefault(d => d.Id == id);
+                var d = db.Drivers.Include(d => d.Vehicle).FirstOrDefault(d => d.Id == id && !d.IsDeleted);
                 return d == null ? null : MapToDTO(d);
             }
         }
@@ -83,13 +83,40 @@ namespace ClickExpress.BusinessLogic.Core.Driver
         {
             using (var db = new OrderContext())
             {
-                var driver = db.Drivers.FirstOrDefault(d => d.Id == id);
+                var driver = db.Drivers.FirstOrDefault(d => d.Id == id && !d.IsDeleted);
                 if (driver == null)
                     return new ResponseMsg { IsSuccess = false, Message = "Driver not found!" };
 
-                db.Drivers.Remove(driver);
+                driver.IsDeleted = true;
+                driver.DeletedAt = DateTime.UtcNow;
                 db.SaveChanges();
-                return new ResponseMsg { IsSuccess = true, Message = "Driver deleted!" };
+                return new ResponseMsg { IsSuccess = true, Message = "Driver soft-deleted!" };
+            }
+        }
+
+        protected ResponseMsg ExecuteRestoreDriverAction(int id)
+        {
+            using (var db = new OrderContext())
+            {
+                var driver = db.Drivers.FirstOrDefault(d => d.Id == id && d.IsDeleted);
+                if (driver == null)
+                    return new ResponseMsg { IsSuccess = false, Message = "Deleted driver not found!" };
+
+                driver.IsDeleted = false;
+                driver.DeletedAt = null;
+                db.SaveChanges();
+                return new ResponseMsg { IsSuccess = true, Message = "Driver restored!" };
+            }
+        }
+
+        protected List<DriverDTO> ExecuteGetDeletedDriversAction()
+        {
+            using (var db = new OrderContext())
+            {
+                return db.Drivers.Include(d => d.Vehicle)
+                    .Where(d => d.IsDeleted)
+                    .OrderByDescending(d => d.DeletedAt)
+                    .Select(d => MapToDTO(d)).ToList();
             }
         }
 

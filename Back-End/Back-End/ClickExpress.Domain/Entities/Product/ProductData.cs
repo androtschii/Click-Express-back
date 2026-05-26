@@ -12,5 +12,7 @@ namespace ClickExpress.Domain.Entities.Product
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public int ViewCount { get; set; } = 0;
+        public bool IsDeleted { get; set; } = false;
+        public DateTime? DeletedAt { get; set; }
     }
 }

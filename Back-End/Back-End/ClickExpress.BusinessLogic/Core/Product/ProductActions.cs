@@ -12,7 +12,7 @@ namespace ClickExpress.BusinessLogic.Core.Product
         {
             using (var db = new ProductContext())
             {
-                var query = db.Products.Where(p => p.IsActive).AsQueryable();
+                var query = db.Products.Where(p => p.IsActive && !p.IsDeleted).AsQueryable();
 
                 if (!string.IsNullOrWhiteSpace(search))
                     query = query.Where(p => p.Name.Contains(search) || p.Description.Contains(search));
@@ -54,7 +54,7 @@ namespace ClickExpress.BusinessLogic.Core.Product
         {
             using (var db = new ProductContext())
             {
-                var p = db.Products.FirstOrDefault(p => p.Id == id);
+                var p = db.Products.FirstOrDefault(p => p.Id == id && !p.IsDeleted);
                 if (p == null) return null;
                 return new ProductDTO
                 {
@@ -108,13 +108,46 @@ namespace ClickExpress.BusinessLogic.Core.Product
         {
             using (var db = new ProductContext())
             {
-                var product = db.Products.FirstOrDefault(p => p.Id == id);
+                var product = db.Products.FirstOrDefault(p => p.Id == id && !p.IsDeleted);
                 if (product == null)
                     return new ResponseMsg { IsSuccess = false, Message = "Product not found!" };
 
-                db.Products.Remove(product);
+                product.IsDeleted = true;
+                product.DeletedAt = DateTime.UtcNow;
+                product.IsActive = false;
                 db.SaveChanges();
-                return new ResponseMsg { IsSuccess = true, Message = "Product deleted!" };
+                return new ResponseMsg { IsSuccess = true, Message = "Product soft-deleted!" };
+            }
+        }
+
+        protected ResponseMsg ExecuteRestoreProductAction(int id)
+        {
+            using (var db = new ProductContext())
+            {
+                var product = db.Products.FirstOrDefault(p => p.Id == id && p.IsDeleted);
+                if (product == null)
+                    return new ResponseMsg { IsSuccess = false, Message = "Deleted product not found!" };
+
+                product.IsDeleted = false;
+                product.DeletedAt = null;
+                product.IsActive = true;
+                db.SaveChanges();
+                return new ResponseMsg { IsSuccess = true, Message = "Product restored!" };
+            }
+        }
+
+        protected List<ProductDTO> ExecuteGetDeletedProductsAction()
+        {
+            using (var db = new ProductContext())
+            {
+                return db.Products.Where(p => p.IsDeleted)
+                    .OrderByDescending(p => p.DeletedAt)
+                    .Select(p => new ProductDTO
+                    {
+                        Id = p.Id, Name = p.Name, Description = p.Description,
+                        Price = p.Price, ImageUrl = p.ImageUrl, Category = p.Category,
+                        Stock = p.Stock, IsActive = p.IsActive, CreatedAt = p.CreatedAt, ViewCount = p.ViewCount
+                    }).ToList();
             }
         }
 

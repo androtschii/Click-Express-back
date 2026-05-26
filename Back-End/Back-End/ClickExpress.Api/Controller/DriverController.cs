@@ -64,5 +64,18 @@ namespace ClickExpress.Api.Controller
             if (!result.IsSuccess) return NotFound(new { message = result.Message });
             return NoContent();
         }
+
+        [HttpGet("deleted")]
+        [Authorize(Roles = "Admin")]
+        public IActionResult GetDeleted() => Ok(_driverActions.GetDeletedDriversAction());
+
+        [HttpPost("{id}/restore")]
+        [Authorize(Roles = "Admin")]
+        public IActionResult Restore(int id)
+        {
+            var result = _driverActions.RestoreDriverAction(id);
+            if (!result.IsSuccess) return NotFound(new { message = result.Message });
+            return Ok(_driverActions.GetDriverByIdAction(id));
+        }
     }
 }

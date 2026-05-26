@@ -13,5 +13,7 @@ namespace ClickExpress.BusinessLogic.Functions.Driver
         public ResponseMsg ResponseUpdateDriverAction(int id, UpdateDriverDTO dto) => ExecuteUpdateDriverAction(id, dto);
         public ResponseMsg ResponsePatchDriverStatusAction(int id, string status) => ExecutePatchDriverStatusAction(id, status);
         public ResponseMsg ResponseDeleteDriverAction(int id) => ExecuteDeleteDriverAction(id);
+        public List<DriverDTO> GetDeletedDriversAction() => ExecuteGetDeletedDriversAction();
+        public ResponseMsg RestoreDriverAction(int id) => ExecuteRestoreDriverAction(id);
     }
 }
