@@ -83,6 +83,8 @@ builder.Services.AddSingleton<IEmailService, SmtpEmailService>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ICacheService, CacheService>();
+builder.Services.AddSingleton<IBackgroundQueue, BackgroundQueue>();
+builder.Services.AddHostedService<BackgroundQueueWorker>();
 builder.Services.AddSignalR();
 builder.Services.AddHealthChecks()
     .AddSqlServer(

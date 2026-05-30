@@ -16,13 +16,15 @@ namespace ClickExpress.Api.Controller
         private readonly IConfiguration _config;
         private readonly IUserActions _userActions;
         private readonly IEmailService _email;
+        private readonly IBackgroundQueue _queue;
         private readonly ILogger<AuthController> _logger;
 
-        public AuthController(IConfiguration config, IUserActions userActions, IEmailService email, ILogger<AuthController> logger)
+        public AuthController(IConfiguration config, IUserActions userActions, IEmailService email, IBackgroundQueue queue, ILogger<AuthController> logger)
         {
             _config = config;
             _userActions = userActions;
             _email = email;
+            _queue = queue;
             _logger = logger;
         }
 
@@ -139,7 +141,12 @@ namespace ClickExpress.Api.Controller
 
                     var appUrl = _config["AppUrl"] ?? "http://localhost:5174";
                     var resetLink = $"{appUrl}/reset-password?token={resetToken}";
-                    _ = Task.Run(async () => await _email.SendPasswordResetAsync(u.Email, resetLink));
+                    var emailTo = u.Email; var link = resetLink;
+                    _queue.Enqueue(async (sp, ct) =>
+                    {
+                        var emailService = sp.GetRequiredService<IEmailService>();
+                        await emailService.SendPasswordResetAsync(emailTo, link);
+                    });
                     _logger.LogInformation("Password reset requested for {Email}", req.Email);
                 }
             }

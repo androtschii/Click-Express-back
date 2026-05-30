@@ -14,12 +14,14 @@ namespace ClickExpress.Api.Controller
     {
         private readonly ILeadActions _leadActions;
         private readonly IEmailService _email;
+        private readonly IBackgroundQueue _queue;
         private readonly ILogger<LeadController> _logger;
 
-        public LeadController(ILeadActions leadActions, IEmailService email, ILogger<LeadController> logger)
+        public LeadController(ILeadActions leadActions, IEmailService email, IBackgroundQueue queue, ILogger<LeadController> logger)
         {
             _leadActions = leadActions;
             _email = email;
+            _queue = queue;
             _logger = logger;
         }
 
@@ -30,11 +32,16 @@ namespace ClickExpress.Api.Controller
         {
             var result = _leadActions.ResponseSubmitLeadAction(dto);
 
-            _ = Task.Run(async () =>
+            var fullName = dto.FullName; var email = dto.Email; var phone = dto.Phone;
+            var origin = dto.Origin; var destination = dto.Destination;
+            var equipment = dto.Equipment; var message = dto.Message;
+
+            _queue.Enqueue(async (sp, ct) =>
             {
-                await _email.SendLeadAlertAsync(dto.FullName, dto.Email, dto.Phone, dto.Origin, dto.Destination, dto.Equipment, dto.Message);
-                if (!string.IsNullOrWhiteSpace(dto.Email))
-                    await _email.SendLeadConfirmationAsync(dto.Email, dto.FullName, dto.Origin, dto.Destination, dto.Equipment);
+                var emailService = sp.GetRequiredService<IEmailService>();
+                await emailService.SendLeadAlertAsync(fullName, email, phone, origin, destination, equipment, message);
+                if (!string.IsNullOrWhiteSpace(email))
+                    await emailService.SendLeadConfirmationAsync(email, fullName, origin, destination, equipment);
             });
 
             return Ok(new { result.Id, message = "Lead submitted" });
