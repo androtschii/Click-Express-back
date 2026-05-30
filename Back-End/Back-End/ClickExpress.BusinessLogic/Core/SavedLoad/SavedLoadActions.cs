@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using ClickExpress.DataAccess.Context;
 using ClickExpress.Domain.Entities.SavedLoad;
 using ClickExpress.Domain.Models.SavedLoad;
@@ -12,8 +11,9 @@ namespace ClickExpress.BusinessLogic.Core.SavedLoad
         {
             using (var db = new OrderContext())
             {
-                return db.SavedLoads.Where(sl => sl.UserId == userId)
-                    .Include(sl => sl.Product)
+                return db.SavedLoads
+                    .AsNoTracking()
+                    .Where(sl => sl.UserId == userId)
                     .OrderByDescending(sl => sl.CreatedAt)
                     .Select(sl => new SavedLoadDTO
                     {

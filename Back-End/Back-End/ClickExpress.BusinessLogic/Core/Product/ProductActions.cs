@@ -12,7 +12,7 @@ namespace ClickExpress.BusinessLogic.Core.Product
         {
             using (var db = new ProductContext())
             {
-                var query = db.Products.Where(p => p.IsActive && !p.IsDeleted).AsQueryable();
+                var query = db.Products.AsNoTracking().Where(p => p.IsActive && !p.IsDeleted).AsQueryable();
 
                 if (!string.IsNullOrWhiteSpace(search))
                     query = query.Where(p => p.Name.Contains(search) || p.Description.Contains(search));
@@ -54,7 +54,7 @@ namespace ClickExpress.BusinessLogic.Core.Product
         {
             using (var db = new ProductContext())
             {
-                var p = db.Products.FirstOrDefault(p => p.Id == id && !p.IsDeleted);
+                var p = db.Products.AsNoTracking().FirstOrDefault(p => p.Id == id && !p.IsDeleted);
                 if (p == null) return null;
                 return new ProductDTO
                 {
@@ -140,7 +140,7 @@ namespace ClickExpress.BusinessLogic.Core.Product
         {
             using (var db = new ProductContext())
             {
-                return db.Products.Where(p => p.IsDeleted)
+                return db.Products.AsNoTracking().Where(p => p.IsDeleted)
                     .OrderByDescending(p => p.DeletedAt)
                     .Select(p => new ProductDTO
                     {
@@ -217,7 +217,7 @@ namespace ClickExpress.BusinessLogic.Core.Product
         {
             using (var db = new ProductContext())
             {
-                var products = db.Products.ToList();
+                var products = db.Products.AsNoTracking().ToList();
                 return new
                 {
                     Total      = products.Count,
