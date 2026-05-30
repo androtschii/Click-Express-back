@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 using ClickExpress.BusinessLogic.Interfaces;
+using ClickExpress.BusinessLogic.Helpers;
 using ClickExpress.DataAccess.Context;
 using ClickExpress.Domain.Models.Review;
 
@@ -13,11 +14,13 @@ namespace ClickExpress.Api.Controller
     public class ReviewController : ControllerBase
     {
         private readonly IReviewActions _reviewActions;
+        private readonly ICacheService _cache;
         private readonly ILogger<ReviewController> _logger;
 
-        public ReviewController(IReviewActions reviewActions, ILogger<ReviewController> logger)
+        public ReviewController(IReviewActions reviewActions, ICacheService cache, ILogger<ReviewController> logger)
         {
             _reviewActions = reviewActions;
+            _cache = cache;
             _logger = logger;
         }
 
@@ -31,7 +34,18 @@ namespace ClickExpress.Api.Controller
 
         [HttpGet]
         [AllowAnonymous]
-        public IActionResult GetAll([FromQuery] bool onlyApproved = true) => Ok(_reviewActions.GetAllReviewsAction(onlyApproved));
+        public IActionResult GetAll([FromQuery] bool onlyApproved = true)
+        {
+            if (!onlyApproved) return Ok(_reviewActions.GetAllReviewsAction(false));
+
+            var cacheKey = "reviews:approved:all";
+            var cached = _cache.Get<object>(cacheKey);
+            if (cached != null) return Ok(cached);
+
+            var result = _reviewActions.GetAllReviewsAction(true);
+            _cache.Set(cacheKey, (object)result, TimeSpan.FromMinutes(2));
+            return Ok(result);
+        }
 
         [HttpGet("paged")]
         [AllowAnonymous]
@@ -74,6 +88,7 @@ namespace ClickExpress.Api.Controller
             var result = _reviewActions.ResponseApproveReviewAction(id);
             if (!result.IsSuccess) return NotFound(new { message = result.Message });
             var admin = User.FindFirst(ClaimTypes.Name)?.Value;
+            _cache.RemoveByPrefix("reviews:");
             _logger.LogInformation("Admin {Admin} approved review {Id}", admin, id);
             return Ok(new { id, isApproved = true });
         }
@@ -85,6 +100,7 @@ namespace ClickExpress.Api.Controller
             var result = _reviewActions.ResponseRejectReviewAction(id);
             if (!result.IsSuccess) return NotFound(new { message = result.Message });
             var admin = User.FindFirst(ClaimTypes.Name)?.Value;
+            _cache.RemoveByPrefix("reviews:");
             _logger.LogInformation("Admin {Admin} rejected review {Id}", admin, id);
             return Ok(new { id, isApproved = false });
         }

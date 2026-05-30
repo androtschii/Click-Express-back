@@ -13,6 +13,7 @@ namespace ClickExpress.Api.Controller
     {
         private readonly IProductActions _productActions;
         private readonly IWebHostEnvironment _env;
+        private readonly ICacheService _cache;
         private readonly ILogger<ProductController> _logger;
         private readonly IAuditLogService _audit;
 
@@ -20,10 +21,11 @@ namespace ClickExpress.Api.Controller
             new(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
         private const long MaxImageSize = 5 * 1024 * 1024; // 5 MB
 
-        public ProductController(IProductActions productActions, IWebHostEnvironment env, ILogger<ProductController> logger, IAuditLogService audit)
+        public ProductController(IProductActions productActions, IWebHostEnvironment env, ICacheService cache, ILogger<ProductController> logger, IAuditLogService audit)
         {
             _productActions = productActions;
             _env = env;
+            _cache = cache;
             _logger = logger;
             _audit = audit;
         }
@@ -46,13 +48,19 @@ namespace ClickExpress.Api.Controller
             if (!string.IsNullOrWhiteSpace(sortBy) && !validSorts.Contains(sortBy))
                 return BadRequest(new { message = $"Invalid sortBy. Allowed: {string.Join(", ", validSorts)}" });
 
+            var cacheKey = $"products:all:{search}:{category}:{minPrice}:{maxPrice}:{sortBy}:{page}:{pageSize}";
+            var cached = _cache.Get<object>(cacheKey);
+            if (cached != null) return Ok(cached);
+
             var (items, total) = _productActions.GetAllProductsAction(search, category, minPrice, maxPrice, sortBy, page, pageSize);
-            return Ok(new
+            var response = new
             {
                 Total = total, Page = page, PageSize = pageSize,
                 TotalPages = (int)Math.Ceiling((double)total / pageSize),
                 Items = items
-            });
+            };
+            _cache.Set(cacheKey, (object)response, TimeSpan.FromMinutes(1));
+            return Ok(response);
         }
 
         [HttpGet("{id}")]

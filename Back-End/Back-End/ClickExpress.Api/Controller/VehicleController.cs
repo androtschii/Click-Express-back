@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ClickExpress.BusinessLogic.Interfaces;
+using ClickExpress.BusinessLogic.Helpers;
 using ClickExpress.Domain.Models.Vehicle;
 
 namespace ClickExpress.Api.Controller
@@ -10,16 +11,26 @@ namespace ClickExpress.Api.Controller
     public class VehicleController : ControllerBase
     {
         private readonly IVehicleActions _vehicleActions;
+        private readonly ICacheService _cache;
 
-        public VehicleController(IVehicleActions vehicleActions)
+        public VehicleController(IVehicleActions vehicleActions, ICacheService cache)
         {
             _vehicleActions = vehicleActions;
+            _cache = cache;
         }
 
         [HttpGet]
         [AllowAnonymous]
         public IActionResult GetAll([FromQuery] string? type, [FromQuery] bool? available)
-            => Ok(_vehicleActions.GetAllVehiclesAction(type, available));
+        {
+            var cacheKey = $"vehicles:all:{type}:{available}";
+            var cached = _cache.Get<object>(cacheKey);
+            if (cached != null) return Ok(cached);
+
+            var result = _vehicleActions.GetAllVehiclesAction(type, available);
+            _cache.Set(cacheKey, (object)result, TimeSpan.FromMinutes(2));
+            return Ok(result);
+        }
 
         [HttpGet("{id}")]
         [AllowAnonymous]
@@ -36,6 +47,7 @@ namespace ClickExpress.Api.Controller
         {
             var result = _vehicleActions.ResponseCreateVehicleAction(dto);
             if (!result.IsSuccess) return BadRequest(new { message = result.Message });
+            _cache.RemoveByPrefix("vehicles:");
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, _vehicleActions.GetVehicleByIdAction(result.Id));
         }
 
@@ -45,6 +57,7 @@ namespace ClickExpress.Api.Controller
         {
             var result = _vehicleActions.ResponseUpdateVehicleAction(id, dto);
             if (!result.IsSuccess) return NotFound(new { message = result.Message });
+            _cache.RemoveByPrefix("vehicles:");
             return Ok(_vehicleActions.GetVehicleByIdAction(id));
         }
 
@@ -54,6 +67,7 @@ namespace ClickExpress.Api.Controller
         {
             var result = _vehicleActions.ResponseToggleAvailabilityAction(id);
             if (!result.IsSuccess) return NotFound(new { message = result.Message });
+            _cache.RemoveByPrefix("vehicles:");
             return Ok(new { message = result.Message });
         }
 
@@ -63,6 +77,7 @@ namespace ClickExpress.Api.Controller
         {
             var result = _vehicleActions.ResponseDeleteVehicleAction(id);
             if (!result.IsSuccess) return NotFound(new { message = result.Message });
+            _cache.RemoveByPrefix("vehicles:");
             return NoContent();
         }
     }

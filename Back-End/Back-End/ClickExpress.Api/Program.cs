@@ -81,6 +81,8 @@ builder.Services.AddScoped<ISavedLoadActions, SavedLoadFlow>();
 builder.Services.AddScoped<INotificationActions, NotificationFlow>();
 builder.Services.AddSingleton<IEmailService, SmtpEmailService>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<ICacheService, CacheService>();
 builder.Services.AddSignalR();
 builder.Services.AddHealthChecks()
     .AddSqlServer(
