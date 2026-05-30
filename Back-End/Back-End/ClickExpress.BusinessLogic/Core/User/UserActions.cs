@@ -1,4 +1,4 @@
-using ClickExpress.DataAccess.Context;
+﻿using ClickExpress.DataAccess.Context;
 using ClickExpress.Domain.Entities.User;
 using ClickExpress.Domain.Models.User;
 using ClickExpress.Domain.Models.Base;
@@ -77,7 +77,7 @@ namespace ClickExpress.BusinessLogic.Core.User
                     Email = user.Email,
                     PasswordHash = HashPassword(user.Password),
                     Role = user.Role ?? "User",
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
                     IsActive = true
                 };
                 db.Users.Add(newUser);

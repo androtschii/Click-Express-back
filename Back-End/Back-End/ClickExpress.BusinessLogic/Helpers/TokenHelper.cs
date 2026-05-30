@@ -1,4 +1,4 @@
-using Microsoft.IdentityModel.Tokens;
+﻿using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -24,7 +24,7 @@ namespace ClickExpress.BusinessLogic.Helpers
                 issuer: issuer,
                 audience: audience,
                 claims: claims,
-                expires: DateTime.Now.AddHours(8),
+                expires: DateTime.UtcNow.AddHours(8),
                 signingCredentials: creds
             );
 

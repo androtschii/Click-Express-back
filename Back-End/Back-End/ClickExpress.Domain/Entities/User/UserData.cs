@@ -1,4 +1,4 @@
-namespace ClickExpress.Domain.Entities.User
+﻿namespace ClickExpress.Domain.Entities.User
 {
     public class UserData
     {
@@ -7,7 +7,7 @@ namespace ClickExpress.Domain.Entities.User
         public string Email { get; set; } = string.Empty;
         public string PasswordHash { get; set; } = string.Empty;
         public string Role { get; set; } = "User";
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public bool IsActive { get; set; } = true;
 
         public string? FullName { get; set; }

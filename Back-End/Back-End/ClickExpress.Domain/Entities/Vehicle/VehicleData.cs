@@ -1,4 +1,4 @@
-namespace ClickExpress.Domain.Entities.Vehicle
+﻿namespace ClickExpress.Domain.Entities.Vehicle
 {
     public class VehicleData
     {
@@ -10,6 +10,6 @@ namespace ClickExpress.Domain.Entities.Vehicle
         public int Year { get; set; }
         public bool IsAvailable { get; set; } = true;
         public string? ImageUrl { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

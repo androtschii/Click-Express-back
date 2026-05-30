@@ -1,4 +1,4 @@
-namespace ClickExpress.Domain.Entities.Lead
+﻿namespace ClickExpress.Domain.Entities.Lead
 {
     public class LeadData
     {
@@ -14,6 +14,6 @@ namespace ClickExpress.Domain.Entities.Lead
         public DateTime? PickupDate { get; set; }
         public string Message { get; set; } = string.Empty;
         public string Status { get; set; } = "New";
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

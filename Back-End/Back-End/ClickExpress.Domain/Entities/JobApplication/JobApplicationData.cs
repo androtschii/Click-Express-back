@@ -1,4 +1,4 @@
-namespace ClickExpress.Domain.Entities.JobApplication
+﻿namespace ClickExpress.Domain.Entities.JobApplication
 {
     public class JobApplicationData
     {
@@ -9,6 +9,6 @@ namespace ClickExpress.Domain.Entities.JobApplication
         public string Position { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
         public string Status { get; set; } = "New";
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

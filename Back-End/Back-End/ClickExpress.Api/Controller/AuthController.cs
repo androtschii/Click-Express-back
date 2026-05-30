@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
@@ -54,7 +54,7 @@ namespace ClickExpress.Api.Controller
             var token = TokenHelper.GenerateJwtToken(user.Username, user.Role,
                 _config["Jwt:Key"]!, _config["Jwt:Issuer"]!, _config["Jwt:Audience"]!);
             var refresh = TokenHelper.GenerateRefreshToken();
-            _userActions.ResponseSaveRefreshTokenAction(user.Id, refresh, DateTime.Now.AddDays(7));
+            _userActions.ResponseSaveRefreshTokenAction(user.Id, refresh, DateTime.UtcNow.AddDays(7));
 
             _logger.LogInformation("User {Username} logged in", user.Username);
             return Ok(new { token, refreshToken = refresh, username = user.Username, role = user.Role });
@@ -80,7 +80,7 @@ namespace ClickExpress.Api.Controller
             var token = TokenHelper.GenerateJwtToken(user.Username, user.Role,
                 _config["Jwt:Key"]!, _config["Jwt:Issuer"]!, _config["Jwt:Audience"]!);
             var refresh = TokenHelper.GenerateRefreshToken();
-            _userActions.ResponseSaveRefreshTokenAction(user.Id, refresh, DateTime.Now.AddDays(7));
+            _userActions.ResponseSaveRefreshTokenAction(user.Id, refresh, DateTime.UtcNow.AddDays(7));
 
             _logger.LogInformation("New user registered: {Username}", user.Username);
             return Ok(new { token, refreshToken = refresh, username = user.Username, role = user.Role });
@@ -95,13 +95,13 @@ namespace ClickExpress.Api.Controller
 
             using var db = new UserContext();
             var u = db.Users.FirstOrDefault(u => u.RefreshToken == req.RefreshToken);
-            if (u == null || u.RefreshTokenExpiry == null || u.RefreshTokenExpiry < DateTime.Now)
+            if (u == null || u.RefreshTokenExpiry == null || u.RefreshTokenExpiry < DateTime.UtcNow)
                 return Unauthorized(new { message = "Refresh token is invalid or expired" });
 
             var newToken = TokenHelper.GenerateJwtToken(u.Username, u.Role,
                 _config["Jwt:Key"]!, _config["Jwt:Issuer"]!, _config["Jwt:Audience"]!);
             var newRefresh = TokenHelper.GenerateRefreshToken();
-            _userActions.ResponseSaveRefreshTokenAction(u.Id, newRefresh, DateTime.Now.AddDays(7));
+            _userActions.ResponseSaveRefreshTokenAction(u.Id, newRefresh, DateTime.UtcNow.AddDays(7));
 
             _logger.LogInformation("Token refreshed for {Username}", u.Username);
             return Ok(new { token = newToken, refreshToken = newRefresh, username = u.Username, role = u.Role });
@@ -134,7 +134,7 @@ namespace ClickExpress.Api.Controller
                 {
                     var resetToken = TokenHelper.GenerateRefreshToken();
                     u.PasswordResetToken = resetToken;
-                    u.PasswordResetTokenExpiry = DateTime.Now.AddHours(1);
+                    u.PasswordResetTokenExpiry = DateTime.UtcNow.AddHours(1);
                     db.SaveChanges();
 
                     var appUrl = _config["AppUrl"] ?? "http://localhost:5174";
@@ -190,7 +190,7 @@ namespace ClickExpress.Api.Controller
             using (var db = new UserContext())
             {
                 var u = db.Users.FirstOrDefault(u => u.PasswordResetToken == req.Token);
-                if (u == null || u.PasswordResetTokenExpiry == null || u.PasswordResetTokenExpiry < DateTime.Now)
+                if (u == null || u.PasswordResetTokenExpiry == null || u.PasswordResetTokenExpiry < DateTime.UtcNow)
                     return BadRequest(new { message = "Reset link is invalid or expired" });
 
                 u.PasswordHash = BCrypt.Net.BCrypt.HashPassword(req.NewPassword);
