@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 using ClickExpress.BusinessLogic.Interfaces;
 using ClickExpress.BusinessLogic.Helpers;
@@ -24,6 +25,7 @@ namespace ClickExpress.Api.Controller
 
         [HttpPost]
         [AllowAnonymous]
+        [EnableRateLimiting("write")]
         public IActionResult Submit([FromBody] CreateLeadDTO dto)
         {
             var result = _leadActions.ResponseSubmitLeadAction(dto);

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
 using ClickExpress.BusinessLogic.Interfaces;
 using ClickExpress.DataAccess.Context;
@@ -43,6 +44,7 @@ namespace ClickExpress.Api.Controller
 
         [HttpPost]
         [Authorize]
+        [EnableRateLimiting("write")]
         public IActionResult Create([FromBody] CreateReviewDTO dto)
         {
             var userId = GetUserId();

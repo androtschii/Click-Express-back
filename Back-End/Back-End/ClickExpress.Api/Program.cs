@@ -177,6 +177,16 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0,
             }));
 
+    // Public write endpoints (lead, review, job application): 10 per 5 minutes per IP
+    options.AddPolicy("write", ctx =>
+        RateLimitPartition.GetFixedWindowLimiter(IpKey(ctx), _ =>
+            new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(5),
+                QueueLimit = 0,
+            }));
+
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     options.OnRejected = async (ctx, token) =>
     {
