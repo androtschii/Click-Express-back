@@ -1,3 +1,4 @@
+﻿using Microsoft.EntityFrameworkCore;
 using ClickExpress.DataAccess.Context;
 using ClickExpress.Domain.Entities.Vehicle;
 using ClickExpress.Domain.Models.Vehicle;

@@ -1,3 +1,4 @@
+﻿using Microsoft.EntityFrameworkCore;
 using ClickExpress.DataAccess.Context;
 using ClickExpress.Domain.Entities.Lead;
 using ClickExpress.Domain.Models.Lead;

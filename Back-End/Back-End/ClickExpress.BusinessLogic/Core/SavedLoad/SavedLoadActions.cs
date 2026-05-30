@@ -1,3 +1,4 @@
+﻿using Microsoft.EntityFrameworkCore;
 using ClickExpress.DataAccess.Context;
 using ClickExpress.Domain.Entities.SavedLoad;
 using ClickExpress.Domain.Models.SavedLoad;

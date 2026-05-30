@@ -14,7 +14,7 @@ namespace ClickExpress.BusinessLogic.Helpers
     {
         private readonly IMemoryCache _cache;
         private readonly List<string> _keys = [];
-        private readonly Lock _lock = new();
+        private readonly object _lock = new();
 
         public CacheService(IMemoryCache cache)
         {

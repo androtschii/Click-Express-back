@@ -1,3 +1,4 @@
+﻿using Microsoft.EntityFrameworkCore;
 using ClickExpress.DataAccess.Context;
 using ClickExpress.Domain.Entities.Notification;
 using ClickExpress.Domain.Models.Notification;

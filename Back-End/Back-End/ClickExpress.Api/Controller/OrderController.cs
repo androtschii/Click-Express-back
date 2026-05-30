@@ -197,12 +197,15 @@ namespace ClickExpress.Api.Controller
                 new { orderId = id, status = dto.Status, updatedAt = DateTime.UtcNow });
             var (email, username) = GetUserContact(order.UserId);
             if (!string.IsNullOrEmpty(email))
-                var emailVal = email; var usernameVal = username; var statusVal = dto.Status; var productName = order.ProductName;
-                    _queue.Enqueue(async (sp, ct) =>
-                    {
-                        var emailService = sp.GetRequiredService<IEmailService>();
-                        await emailService.SendOrderStatusUpdateAsync(emailVal, usernameVal, id, statusVal, productName);
-                    });
+            {
+                var emailVal = email; var usernameVal = username;
+                var statusVal = dto.Status; var productName = order.ProductName;
+                _queue.Enqueue(async (sp, ct) =>
+                {
+                    var emailService = sp.GetRequiredService<IEmailService>();
+                    await emailService.SendOrderStatusUpdateAsync(emailVal, usernameVal, id, statusVal, productName);
+                });
+            }
             return Ok(_orderActions.GetOrderByIdAction(id));
         }
 
