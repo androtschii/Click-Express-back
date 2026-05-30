@@ -31,6 +31,53 @@ namespace ClickExpress.BusinessLogic.Core.Review
                 .ToList();
         }
 
+        protected PagedResult<ReviewDTO> ExecuteGetReviewsPagedAction(bool onlyApproved, int page, int pageSize, string? sortBy)
+        {
+            page = page < 1 ? 1 : page;
+            pageSize = pageSize is < 1 or > 100 ? 20 : pageSize;
+
+            using var db = new OrderContext();
+
+            var query = db.Reviews
+                .AsNoTracking()
+                .Where(r => !onlyApproved || r.IsApproved);
+
+            query = sortBy switch
+            {
+                "rating_desc" => query.OrderByDescending(r => r.Rating).ThenByDescending(r => r.CreatedAt),
+                "rating_asc"  => query.OrderBy(r => r.Rating).ThenByDescending(r => r.CreatedAt),
+                "oldest"      => query.OrderBy(r => r.CreatedAt),
+                _             => query.OrderByDescending(r => r.CreatedAt),
+            };
+
+            var total = query.Count();
+            var items = query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(r => new ReviewDTO
+                {
+                    Id = r.Id,
+                    UserId = r.UserId,
+                    Username = r.User.Username,
+                    ProductId = r.ProductId,
+                    Rating = r.Rating,
+                    Text = r.Text,
+                    CreatedAt = r.CreatedAt,
+                    IsApproved = r.IsApproved,
+                    Role = r.Role,
+                    Location = r.Location
+                })
+                .ToList();
+
+            return new PagedResult<ReviewDTO>
+            {
+                Items = items,
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize
+            };
+        }
+
         protected ReviewDTO? ExecuteGetReviewByIdAction(int id)
         {
             using var db = new OrderContext();

@@ -12,5 +12,6 @@ namespace ClickExpress.BusinessLogic.Functions.Lead
         public LeadDTO? GetLeadByIdAction(int id) => ExecuteGetLeadByIdAction(id);
         public ResponseMsg ResponseUpdateLeadStatusAction(int id, string status) => ExecuteUpdateLeadStatusAction(id, status);
         public ResponseMsg ResponseDeleteLeadAction(int id) => ExecuteDeleteLeadAction(id);
+        public PagedResult<LeadDTO> GetLeadsPagedAction(string? status, string? search, int page, int pageSize) => ExecuteGetLeadsPagedAction(status, search, page, pageSize);
     }
 }

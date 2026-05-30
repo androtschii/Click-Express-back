@@ -86,6 +86,60 @@ namespace ClickExpress.BusinessLogic.Core.Lead
                 .FirstOrDefault();
         }
 
+        protected PagedResult<LeadDTO> ExecuteGetLeadsPagedAction(string? status, string? search, int page, int pageSize)
+        {
+            page = page < 1 ? 1 : page;
+            pageSize = pageSize is < 1 or > 100 ? 25 : pageSize;
+
+            using var db = new OrderContext();
+
+            var query = db.Leads
+                .AsNoTracking()
+                .Where(l => string.IsNullOrWhiteSpace(status) || l.Status == status);
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.ToLower();
+                query = query.Where(l =>
+                    l.FullName.ToLower().Contains(s) ||
+                    l.Email.ToLower().Contains(s) ||
+                    l.Phone.Contains(s) ||
+                    l.Origin.ToLower().Contains(s) ||
+                    l.Destination.ToLower().Contains(s));
+            }
+
+            var total = query.Count();
+            var items = query
+                .OrderByDescending(l => l.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(l => new LeadDTO
+                {
+                    Id = l.Id,
+                    FullName = l.FullName,
+                    Email = l.Email,
+                    Phone = l.Phone,
+                    Company = l.Company,
+                    Origin = l.Origin,
+                    Destination = l.Destination,
+                    Equipment = l.Equipment,
+                    Weight = l.Weight,
+                    PickupDate = l.PickupDate,
+                    Message = l.Message,
+                    Status = l.Status,
+                    CreatedAt = l.CreatedAt
+                })
+                .ToList();
+
+            return new PagedResult<LeadDTO>
+            {
+                Items = items,
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize
+            };
+        }
+
         protected ResponseMsg ExecuteUpdateLeadStatusAction(int id, string status)
         {
             using var db = new OrderContext();

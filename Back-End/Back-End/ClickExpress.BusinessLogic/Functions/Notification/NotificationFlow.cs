@@ -13,5 +13,6 @@ namespace ClickExpress.BusinessLogic.Functions.Notification
         public ResponseMsg MarkAllReadAction(int userId) => ExecuteMarkAllReadAction(userId);
         public ResponseMsg DeleteAction(int id, int userId) => ExecuteDeleteAction(id, userId);
         public ResponseMsg SendNotificationAction(CreateNotificationDTO dto) => ExecuteSendNotificationAction(dto);
+        public PagedResult<NotificationDTO> GetNotificationsPagedAction(int userId, bool? unreadOnly, int page, int pageSize) => ExecuteGetNotificationsPagedAction(userId, unreadOnly, page, pageSize);
     }
 }

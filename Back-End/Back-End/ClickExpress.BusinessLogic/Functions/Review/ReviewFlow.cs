@@ -15,5 +15,6 @@ namespace ClickExpress.BusinessLogic.Functions.Review
         public int GetPendingCountAction() => ExecuteGetPendingCountAction();
         public ResponseMsg ResponseDeleteReviewAction(int id) => ExecuteDeleteReviewAction(id);
         public ResponseMsg ResponseUpdateReviewAction(int id, int userId, UpdateReviewDTO dto) => ExecuteUpdateReviewAction(id, userId, dto);
+        public PagedResult<ReviewDTO> GetReviewsPagedAction(bool onlyApproved, int page, int pageSize, string? sortBy) => ExecuteGetReviewsPagedAction(onlyApproved, page, pageSize, sortBy);
     }
 }

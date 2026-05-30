@@ -10,5 +10,6 @@ namespace ClickExpress.BusinessLogic.Interfaces
         JobApplicationDTO? GetJobApplicationByIdAction(int id);
         ResponseMsg ResponseUpdateJobApplicationStatusAction(int id, string status);
         ResponseMsg ResponseDeleteJobApplicationAction(int id);
+        PagedResult<JobApplicationDTO> GetJobApplicationsPagedAction(string? status, int page, int pageSize);
     }
 }

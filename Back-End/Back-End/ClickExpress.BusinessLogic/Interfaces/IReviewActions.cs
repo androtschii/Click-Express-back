@@ -13,5 +13,6 @@ namespace ClickExpress.BusinessLogic.Interfaces
         int GetPendingCountAction();
         ResponseMsg ResponseDeleteReviewAction(int id);
         ResponseMsg ResponseUpdateReviewAction(int id, int userId, UpdateReviewDTO dto);
+        PagedResult<ReviewDTO> GetReviewsPagedAction(bool onlyApproved, int page, int pageSize, string? sortBy);
     }
 }

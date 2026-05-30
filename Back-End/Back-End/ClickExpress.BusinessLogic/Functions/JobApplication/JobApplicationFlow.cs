@@ -12,5 +12,6 @@ namespace ClickExpress.BusinessLogic.Functions.JobApplication
         public JobApplicationDTO? GetJobApplicationByIdAction(int id) => ExecuteGetJobApplicationByIdAction(id);
         public ResponseMsg ResponseUpdateJobApplicationStatusAction(int id, string status) => ExecuteUpdateJobApplicationStatusAction(id, status);
         public ResponseMsg ResponseDeleteJobApplicationAction(int id) => ExecuteDeleteJobApplicationAction(id);
+        public PagedResult<JobApplicationDTO> GetJobApplicationsPagedAction(string? status, int page, int pageSize) => ExecuteGetJobApplicationsPagedAction(status, page, pageSize);
     }
 }

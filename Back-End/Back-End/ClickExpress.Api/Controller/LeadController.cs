@@ -44,6 +44,15 @@ namespace ClickExpress.Api.Controller
         [Authorize(Roles = "Admin")]
         public IActionResult GetAll([FromQuery] string? status) => Ok(_leadActions.GetAllLeadsAction(status));
 
+        [HttpGet("paged")]
+        [Authorize(Roles = "Admin")]
+        public IActionResult GetPaged(
+            [FromQuery] string? status,
+            [FromQuery] string? search,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 25)
+            => Ok(_leadActions.GetLeadsPagedAction(status, search, page, pageSize));
+
         [HttpGet("{id}")]
         [Authorize(Roles = "Admin")]
         public IActionResult GetById(int id)

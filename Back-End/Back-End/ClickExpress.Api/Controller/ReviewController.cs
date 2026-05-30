@@ -33,6 +33,15 @@ namespace ClickExpress.Api.Controller
         [AllowAnonymous]
         public IActionResult GetAll([FromQuery] bool onlyApproved = true) => Ok(_reviewActions.GetAllReviewsAction(onlyApproved));
 
+        [HttpGet("paged")]
+        [AllowAnonymous]
+        public IActionResult GetPaged(
+            [FromQuery] bool onlyApproved = true,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20,
+            [FromQuery] string? sortBy = null)
+            => Ok(_reviewActions.GetReviewsPagedAction(onlyApproved, page, pageSize, sortBy));
+
         [HttpGet("{id}")]
         [AllowAnonymous]
         public IActionResult GetById(int id)

@@ -71,6 +71,44 @@ namespace ClickExpress.BusinessLogic.Core.JobApplication
                 .FirstOrDefault();
         }
 
+        protected PagedResult<JobApplicationDTO> ExecuteGetJobApplicationsPagedAction(string? status, int page, int pageSize)
+        {
+            page = page < 1 ? 1 : page;
+            pageSize = pageSize is < 1 or > 100 ? 25 : pageSize;
+
+            using var db = new OrderContext();
+
+            var query = db.JobApplications
+                .AsNoTracking()
+                .Where(a => string.IsNullOrWhiteSpace(status) || a.Status == status);
+
+            var total = query.Count();
+            var items = query
+                .OrderByDescending(a => a.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(a => new JobApplicationDTO
+                {
+                    Id = a.Id,
+                    FullName = a.FullName,
+                    Email = a.Email,
+                    Phone = a.Phone,
+                    Position = a.Position,
+                    Message = a.Message,
+                    Status = a.Status,
+                    CreatedAt = a.CreatedAt
+                })
+                .ToList();
+
+            return new PagedResult<JobApplicationDTO>
+            {
+                Items = items,
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize
+            };
+        }
+
         protected ResponseMsg ExecuteUpdateJobApplicationStatusAction(int id, string status)
         {
             using var db = new OrderContext();

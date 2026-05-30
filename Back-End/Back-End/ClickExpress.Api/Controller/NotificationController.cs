@@ -23,6 +23,13 @@ namespace ClickExpress.Api.Controller
         [HttpGet]
         public IActionResult GetAll() => Ok(_actions.GetAllForUserAction(UserId));
 
+        [HttpGet("paged")]
+        public IActionResult GetPaged(
+            [FromQuery] bool? unreadOnly,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
+            => Ok(_actions.GetNotificationsPagedAction(UserId, unreadOnly, page, pageSize));
+
         [HttpGet("unread/count")]
         public IActionResult UnreadCount() => Ok(new { count = _actions.GetUnreadCountAction(UserId) });
 

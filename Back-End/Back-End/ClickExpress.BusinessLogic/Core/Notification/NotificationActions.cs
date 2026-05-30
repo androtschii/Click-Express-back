@@ -23,6 +23,39 @@ namespace ClickExpress.BusinessLogic.Core.Notification
                 .ToList();
         }
 
+        protected PagedResult<NotificationDTO> ExecuteGetNotificationsPagedAction(int userId, bool? unreadOnly, int page, int pageSize)
+        {
+            page = page < 1 ? 1 : page;
+            pageSize = pageSize is < 1 or > 100 ? 20 : pageSize;
+
+            using var db = new OrderContext();
+
+            var query = db.Notifications
+                .AsNoTracking()
+                .Where(n => n.UserId == userId
+                         && (!unreadOnly.HasValue || !unreadOnly.Value || !n.IsRead));
+
+            var total = query.Count();
+            var items = query
+                .OrderByDescending(n => n.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(n => new NotificationDTO
+                {
+                    Id = n.Id, Title = n.Title, Body = n.Body,
+                    Type = n.Type, IsRead = n.IsRead, CreatedAt = n.CreatedAt,
+                })
+                .ToList();
+
+            return new PagedResult<NotificationDTO>
+            {
+                Items = items,
+                TotalCount = total,
+                Page = page,
+                PageSize = pageSize
+            };
+        }
+
         protected int ExecuteGetUnreadCountAction(int userId)
         {
             using var db = new OrderContext();
