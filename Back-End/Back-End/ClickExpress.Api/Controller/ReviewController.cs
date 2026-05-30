@@ -15,12 +15,14 @@ namespace ClickExpress.Api.Controller
     {
         private readonly IReviewActions _reviewActions;
         private readonly ICacheService _cache;
+        private readonly IAuditLogService _audit;
         private readonly ILogger<ReviewController> _logger;
 
-        public ReviewController(IReviewActions reviewActions, ICacheService cache, ILogger<ReviewController> logger)
+        public ReviewController(IReviewActions reviewActions, ICacheService cache, IAuditLogService audit, ILogger<ReviewController> logger)
         {
             _reviewActions = reviewActions;
             _cache = cache;
+            _audit = audit;
             _logger = logger;
         }
 
@@ -89,6 +91,7 @@ namespace ClickExpress.Api.Controller
             if (!result.IsSuccess) return NotFound(new { message = result.Message });
             var admin = User.FindFirst(ClaimTypes.Name)?.Value;
             _cache.RemoveByPrefix("reviews:");
+            _audit.Log("Approve", "Review", id, admin ?? "system");
             _logger.LogInformation("Admin {Admin} approved review {Id}", admin, id);
             return Ok(new { id, isApproved = true });
         }
@@ -101,6 +104,7 @@ namespace ClickExpress.Api.Controller
             if (!result.IsSuccess) return NotFound(new { message = result.Message });
             var admin = User.FindFirst(ClaimTypes.Name)?.Value;
             _cache.RemoveByPrefix("reviews:");
+            _audit.Log("Reject", "Review", id, admin ?? "system");
             _logger.LogInformation("Admin {Admin} rejected review {Id}", admin, id);
             return Ok(new { id, isApproved = false });
         }
@@ -129,6 +133,8 @@ namespace ClickExpress.Api.Controller
                 return Forbid();
 
             _reviewActions.ResponseDeleteReviewAction(id);
+            var actor = User.FindFirst(ClaimTypes.Name)?.Value ?? "unknown";
+            _audit.Log("Delete", "Review", id, actor);
             return NoContent();
         }
     }
