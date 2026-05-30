@@ -116,6 +116,41 @@ namespace ClickExpress.DataAccess.Context
                 .HasOne(d => d.UploadedByUser).WithMany().HasForeignKey(d => d.UploadedBy)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Performance indexes
+            modelBuilder.Entity<ReviewData>()
+                .HasIndex(r => r.UserId).HasDatabaseName("IX_Reviews_UserId");
+            modelBuilder.Entity<ReviewData>()
+                .HasIndex(r => r.IsApproved).HasDatabaseName("IX_Reviews_IsApproved");
+            modelBuilder.Entity<ReviewData>()
+                .HasIndex(r => r.CreatedAt).HasDatabaseName("IX_Reviews_CreatedAt");
+
+            modelBuilder.Entity<OrderData>()
+                .HasIndex(o => o.UserId).HasDatabaseName("IX_Orders_UserId");
+            modelBuilder.Entity<OrderData>()
+                .HasIndex(o => o.Status).HasDatabaseName("IX_Orders_Status");
+            modelBuilder.Entity<OrderData>()
+                .HasIndex(o => o.CreatedAt).HasDatabaseName("IX_Orders_CreatedAt");
+
+            modelBuilder.Entity<NotificationData>()
+                .HasIndex(n => n.UserId).HasDatabaseName("IX_Notifications_UserId");
+            modelBuilder.Entity<NotificationData>()
+                .HasIndex(n => new { n.UserId, n.IsRead }).HasDatabaseName("IX_Notifications_UserId_IsRead");
+
+            modelBuilder.Entity<LeadData>()
+                .HasIndex(l => l.Status).HasDatabaseName("IX_Leads_Status");
+            modelBuilder.Entity<LeadData>()
+                .HasIndex(l => l.CreatedAt).HasDatabaseName("IX_Leads_CreatedAt");
+
+            modelBuilder.Entity<DocumentData>()
+                .HasIndex(d => d.UploadedBy).HasDatabaseName("IX_Documents_UploadedBy");
+            modelBuilder.Entity<DocumentData>()
+                .HasIndex(d => d.OrderId).HasDatabaseName("IX_Documents_OrderId");
+
+            modelBuilder.Entity<NewsArticleData>()
+                .HasIndex(n => n.IsPublished).HasDatabaseName("IX_NewsArticles_IsPublished");
+            modelBuilder.Entity<NewsArticleData>()
+                .HasIndex(n => n.PublishedAt).HasDatabaseName("IX_NewsArticles_PublishedAt");
+
             base.OnModelCreating(modelBuilder);
         }
     }
