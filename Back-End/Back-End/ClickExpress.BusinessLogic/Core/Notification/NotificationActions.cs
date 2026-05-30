@@ -12,6 +12,7 @@ namespace ClickExpress.BusinessLogic.Core.Notification
         {
             using var db = new OrderContext();
             return db.Notifications
+                .AsNoTracking()
                 .Where(n => n.UserId == userId)
                 .OrderByDescending(n => n.CreatedAt)
                 .Select(n => new NotificationDTO
@@ -25,7 +26,7 @@ namespace ClickExpress.BusinessLogic.Core.Notification
         protected int ExecuteGetUnreadCountAction(int userId)
         {
             using var db = new OrderContext();
-            return db.Notifications.Count(n => n.UserId == userId && !n.IsRead);
+            return db.Notifications.AsNoTracking().Count(n => n.UserId == userId && !n.IsRead);
         }
 
         protected ResponseMsg ExecuteMarkReadAction(int id, int userId)

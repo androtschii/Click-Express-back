@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using ClickExpress.DataAccess.Context;
 using ClickExpress.Domain.Entities.Review;
 using ClickExpress.Domain.Models.Review;
@@ -10,35 +9,49 @@ namespace ClickExpress.BusinessLogic.Core.Review
     {
         protected List<ReviewDTO> ExecuteGetAllReviewsAction(bool onlyApproved)
         {
-            using (var db = new OrderContext())
-            {
-                var query = db.Reviews.Include(r => r.User).AsQueryable();
-                if (onlyApproved) query = query.Where(r => r.IsApproved);
+            using var db = new OrderContext();
 
-                return query.OrderByDescending(r => r.CreatedAt).Select(r => new ReviewDTO
+            return db.Reviews
+                .AsNoTracking()
+                .Where(r => !onlyApproved || r.IsApproved)
+                .OrderByDescending(r => r.CreatedAt)
+                .Select(r => new ReviewDTO
                 {
-                    Id = r.Id, UserId = r.UserId, Username = r.User.Username,
-                    ProductId = r.ProductId, Rating = r.Rating, Text = r.Text,
-                    CreatedAt = r.CreatedAt, IsApproved = r.IsApproved,
-                    Role = r.Role, Location = r.Location
-                }).ToList();
-            }
+                    Id = r.Id,
+                    UserId = r.UserId,
+                    Username = r.User.Username,
+                    ProductId = r.ProductId,
+                    Rating = r.Rating,
+                    Text = r.Text,
+                    CreatedAt = r.CreatedAt,
+                    IsApproved = r.IsApproved,
+                    Role = r.Role,
+                    Location = r.Location
+                })
+                .ToList();
         }
 
         protected ReviewDTO? ExecuteGetReviewByIdAction(int id)
         {
-            using (var db = new OrderContext())
-            {
-                var r = db.Reviews.Include(r => r.User).FirstOrDefault(r => r.Id == id);
-                if (r == null) return null;
-                return new ReviewDTO
+            using var db = new OrderContext();
+
+            return db.Reviews
+                .AsNoTracking()
+                .Where(r => r.Id == id)
+                .Select(r => new ReviewDTO
                 {
-                    Id = r.Id, UserId = r.UserId, Username = r.User.Username,
-                    ProductId = r.ProductId, Rating = r.Rating, Text = r.Text,
-                    CreatedAt = r.CreatedAt, IsApproved = r.IsApproved,
-                    Role = r.Role, Location = r.Location
-                };
-            }
+                    Id = r.Id,
+                    UserId = r.UserId,
+                    Username = r.User.Username,
+                    ProductId = r.ProductId,
+                    Rating = r.Rating,
+                    Text = r.Text,
+                    CreatedAt = r.CreatedAt,
+                    IsApproved = r.IsApproved,
+                    Role = r.Role,
+                    Location = r.Location
+                })
+                .FirstOrDefault();
         }
 
         protected ResponseAction ExecuteCreateReviewAction(int userId, CreateReviewDTO dto)
@@ -49,66 +62,72 @@ namespace ClickExpress.BusinessLogic.Core.Review
             if (string.IsNullOrWhiteSpace(dto.Text))
                 return new ResponseAction { IsSuccess = false, Message = "Text is required!" };
 
-            using (var db = new OrderContext())
+            using var db = new OrderContext();
+
+            var review = new ReviewData
             {
-                var review = new ReviewData
-                {
-                    UserId = userId, ProductId = dto.ProductId, Rating = dto.Rating,
-                    Text = dto.Text, IsApproved = false, CreatedAt = DateTime.Now,
-                    Role = dto.Role, Location = dto.Location
-                };
-                db.Reviews.Add(review);
-                db.SaveChanges();
-                return new ResponseAction { IsSuccess = true, Message = "Review submitted!", Id = review.Id };
-            }
+                UserId = userId,
+                ProductId = dto.ProductId,
+                Rating = dto.Rating,
+                Text = dto.Text,
+                IsApproved = false,
+                CreatedAt = DateTime.UtcNow,
+                Role = dto.Role,
+                Location = dto.Location
+            };
+
+            db.Reviews.Add(review);
+            db.SaveChanges();
+
+            return new ResponseAction { IsSuccess = true, Message = "Review submitted!", Id = review.Id };
         }
 
         protected ResponseMsg ExecuteApproveReviewAction(int id)
         {
-            using (var db = new OrderContext())
-            {
-                var review = db.Reviews.FirstOrDefault(r => r.Id == id);
-                if (review == null)
-                    return new ResponseMsg { IsSuccess = false, Message = "Review not found!" };
+            using var db = new OrderContext();
 
-                review.IsApproved = true;
-                db.SaveChanges();
-                return new ResponseMsg { IsSuccess = true, Message = "Review approved!" };
-            }
+            var review = db.Reviews.FirstOrDefault(r => r.Id == id);
+            if (review == null)
+                return new ResponseMsg { IsSuccess = false, Message = "Review not found!" };
+
+            review.IsApproved = true;
+            db.SaveChanges();
+
+            return new ResponseMsg { IsSuccess = true, Message = "Review approved!" };
         }
 
         protected ResponseMsg ExecuteRejectReviewAction(int id)
         {
-            using (var db = new OrderContext())
-            {
-                var review = db.Reviews.FirstOrDefault(r => r.Id == id);
-                if (review == null)
-                    return new ResponseMsg { IsSuccess = false, Message = "Review not found!" };
+            using var db = new OrderContext();
 
-                review.IsApproved = false;
-                db.SaveChanges();
-                return new ResponseMsg { IsSuccess = true, Message = "Review rejected!" };
-            }
+            var review = db.Reviews.FirstOrDefault(r => r.Id == id);
+            if (review == null)
+                return new ResponseMsg { IsSuccess = false, Message = "Review not found!" };
+
+            review.IsApproved = false;
+            db.SaveChanges();
+
+            return new ResponseMsg { IsSuccess = true, Message = "Review rejected!" };
         }
 
         protected int ExecuteGetPendingCountAction()
         {
-            using (var db = new OrderContext())
-                return db.Reviews.Count(r => !r.IsApproved);
+            using var db = new OrderContext();
+            return db.Reviews.Count(r => !r.IsApproved);
         }
 
         protected ResponseMsg ExecuteDeleteReviewAction(int id)
         {
-            using (var db = new OrderContext())
-            {
-                var review = db.Reviews.FirstOrDefault(r => r.Id == id);
-                if (review == null)
-                    return new ResponseMsg { IsSuccess = false, Message = "Review not found!" };
+            using var db = new OrderContext();
 
-                db.Reviews.Remove(review);
-                db.SaveChanges();
-                return new ResponseMsg { IsSuccess = true, Message = "Review deleted!" };
-            }
+            var review = db.Reviews.FirstOrDefault(r => r.Id == id);
+            if (review == null)
+                return new ResponseMsg { IsSuccess = false, Message = "Review not found!" };
+
+            db.Reviews.Remove(review);
+            db.SaveChanges();
+
+            return new ResponseMsg { IsSuccess = true, Message = "Review deleted!" };
         }
 
         protected ResponseMsg ExecuteUpdateReviewAction(int id, int userId, UpdateReviewDTO dto)
@@ -119,20 +138,20 @@ namespace ClickExpress.BusinessLogic.Core.Review
             if (string.IsNullOrWhiteSpace(dto.Text))
                 return new ResponseMsg { IsSuccess = false, Message = "Text is required!" };
 
-            using (var db = new OrderContext())
-            {
-                var review = db.Reviews.FirstOrDefault(r => r.Id == id && r.UserId == userId);
-                if (review == null)
-                    return new ResponseMsg { IsSuccess = false, Message = "Review not found!" };
+            using var db = new OrderContext();
 
-                review.Rating = dto.Rating;
-                review.Text = dto.Text;
-                review.Role = dto.Role;
-                review.Location = dto.Location;
-                review.IsApproved = false;
-                db.SaveChanges();
-                return new ResponseMsg { IsSuccess = true, Message = "Review updated!" };
-            }
+            var review = db.Reviews.FirstOrDefault(r => r.Id == id && r.UserId == userId);
+            if (review == null)
+                return new ResponseMsg { IsSuccess = false, Message = "Review not found!" };
+
+            review.Rating = dto.Rating;
+            review.Text = dto.Text;
+            review.Role = dto.Role;
+            review.Location = dto.Location;
+            review.IsApproved = false;
+            db.SaveChanges();
+
+            return new ResponseMsg { IsSuccess = true, Message = "Review updated!" };
         }
     }
 }
