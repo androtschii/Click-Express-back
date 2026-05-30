@@ -14,5 +14,6 @@ namespace ClickExpress.BusinessLogic.Interfaces
         ResponseMsg ResponseDeleteOrderAction(int id);
         List<OrderStatusHistoryDTO> GetOrderTrackingAction(int orderId);
         object GetOrderStatsAction();
+        PagedResult<OrderDTO> GetOrdersPagedAction(string? status, int? userId, string? search, int page, int pageSize);
     }
 }

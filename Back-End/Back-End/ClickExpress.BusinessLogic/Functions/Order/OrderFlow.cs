@@ -16,5 +16,6 @@ namespace ClickExpress.BusinessLogic.Functions.Order
         public ResponseMsg ResponseDeleteOrderAction(int id) => ExecuteDeleteOrderAction(id);
         public List<OrderStatusHistoryDTO> GetOrderTrackingAction(int orderId) => ExecuteGetOrderTrackingAction(orderId);
         public object GetOrderStatsAction() => ExecuteGetOrderStatsAction();
+        public PagedResult<OrderDTO> GetOrdersPagedAction(string? status, int? userId, string? search, int page, int pageSize) => ExecuteGetOrdersPagedAction(status, userId, search, page, pageSize);
     }
 }

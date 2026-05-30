@@ -54,6 +54,16 @@ namespace ClickExpress.Api.Controller
         [Authorize(Roles = "Admin")]
         public IActionResult GetAll() => Ok(_orderActions.GetAllOrdersAction());
 
+        [HttpGet("paged")]
+        [Authorize(Roles = "Admin")]
+        public IActionResult GetPaged(
+            [FromQuery] string? status,
+            [FromQuery] int? userId,
+            [FromQuery] string? search,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 25)
+            => Ok(_orderActions.GetOrdersPagedAction(status, userId, search, page, pageSize));
+
         [HttpGet("stats")]
         [Authorize(Roles = "Admin")]
         public IActionResult GetStats() => Ok(_orderActions.GetOrderStatsAction());
