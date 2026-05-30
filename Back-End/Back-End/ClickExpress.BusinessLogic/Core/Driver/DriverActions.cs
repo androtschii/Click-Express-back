@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using ClickExpress.DataAccess.Context;
 using ClickExpress.Domain.Entities.Driver;
 using ClickExpress.Domain.Models.Driver;
@@ -10,121 +9,156 @@ namespace ClickExpress.BusinessLogic.Core.Driver
     {
         protected List<DriverDTO> ExecuteGetAllDriversAction(string? status)
         {
-            using (var db = new OrderContext())
-            {
-                var query = db.Drivers.Include(d => d.Vehicle).Where(d => !d.IsDeleted).AsQueryable();
-                if (!string.IsNullOrWhiteSpace(status)) query = query.Where(d => d.Status == status);
+            using var db = new OrderContext();
 
-                return query.OrderBy(d => d.FullName).Select(d => MapToDTO(d)).ToList();
-            }
+            return db.Drivers
+                .AsNoTracking()
+                .Where(d => !d.IsDeleted
+                         && (string.IsNullOrWhiteSpace(status) || d.Status == status))
+                .OrderBy(d => d.FullName)
+                .Select(d => new DriverDTO
+                {
+                    Id = d.Id,
+                    FullName = d.FullName,
+                    Phone = d.Phone,
+                    CdlNumber = d.CdlNumber,
+                    Status = d.Status,
+                    VehicleId = d.VehicleId,
+                    VehicleModel = d.Vehicle != null ? d.Vehicle.Model : null,
+                    CreatedAt = d.CreatedAt
+                })
+                .ToList();
         }
 
         protected DriverDTO? ExecuteGetDriverByIdAction(int id)
         {
-            using (var db = new OrderContext())
-            {
-                var d = db.Drivers.Include(d => d.Vehicle).FirstOrDefault(d => d.Id == id && !d.IsDeleted);
-                return d == null ? null : MapToDTO(d);
-            }
+            using var db = new OrderContext();
+
+            return db.Drivers
+                .AsNoTracking()
+                .Where(d => d.Id == id && !d.IsDeleted)
+                .Select(d => new DriverDTO
+                {
+                    Id = d.Id,
+                    FullName = d.FullName,
+                    Phone = d.Phone,
+                    CdlNumber = d.CdlNumber,
+                    Status = d.Status,
+                    VehicleId = d.VehicleId,
+                    VehicleModel = d.Vehicle != null ? d.Vehicle.Model : null,
+                    CreatedAt = d.CreatedAt
+                })
+                .FirstOrDefault();
         }
 
         protected ResponseAction ExecuteCreateDriverAction(CreateDriverDTO dto)
         {
-            using (var db = new OrderContext())
-            {
-                if (dto.VehicleId.HasValue && db.Vehicles.Find(dto.VehicleId.Value) == null)
-                    return new ResponseAction { IsSuccess = false, Message = "Vehicle not found!" };
+            using var db = new OrderContext();
 
-                var driver = new DriverData
-                {
-                    FullName = dto.FullName, Phone = dto.Phone, CdlNumber = dto.CdlNumber,
-                    Status = dto.Status, VehicleId = dto.VehicleId, CreatedAt = DateTime.UtcNow
-                };
-                db.Drivers.Add(driver);
-                db.SaveChanges();
-                return new ResponseAction { IsSuccess = true, Message = "Driver created!", Id = driver.Id };
-            }
+            if (dto.VehicleId.HasValue && db.Vehicles.Find(dto.VehicleId.Value) == null)
+                return new ResponseAction { IsSuccess = false, Message = "Vehicle not found!" };
+
+            var driver = new DriverData
+            {
+                FullName = dto.FullName,
+                Phone = dto.Phone,
+                CdlNumber = dto.CdlNumber,
+                Status = dto.Status,
+                VehicleId = dto.VehicleId,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            db.Drivers.Add(driver);
+            db.SaveChanges();
+
+            return new ResponseAction { IsSuccess = true, Message = "Driver created!", Id = driver.Id };
         }
 
         protected ResponseMsg ExecuteUpdateDriverAction(int id, UpdateDriverDTO dto)
         {
-            using (var db = new OrderContext())
-            {
-                var driver = db.Drivers.FirstOrDefault(d => d.Id == id);
-                if (driver == null)
-                    return new ResponseMsg { IsSuccess = false, Message = "Driver not found!" };
+            using var db = new OrderContext();
 
-                if (dto.VehicleId.HasValue && db.Vehicles.Find(dto.VehicleId.Value) == null)
-                    return new ResponseMsg { IsSuccess = false, Message = "Vehicle not found!" };
+            var driver = db.Drivers.FirstOrDefault(d => d.Id == id);
+            if (driver == null)
+                return new ResponseMsg { IsSuccess = false, Message = "Driver not found!" };
 
-                driver.FullName = dto.FullName; driver.Phone = dto.Phone;
-                driver.CdlNumber = dto.CdlNumber; driver.Status = dto.Status;
-                driver.VehicleId = dto.VehicleId;
-                db.SaveChanges();
-                return new ResponseMsg { IsSuccess = true, Message = "Driver updated!" };
-            }
+            if (dto.VehicleId.HasValue && db.Vehicles.Find(dto.VehicleId.Value) == null)
+                return new ResponseMsg { IsSuccess = false, Message = "Vehicle not found!" };
+
+            driver.FullName = dto.FullName;
+            driver.Phone = dto.Phone;
+            driver.CdlNumber = dto.CdlNumber;
+            driver.Status = dto.Status;
+            driver.VehicleId = dto.VehicleId;
+            db.SaveChanges();
+
+            return new ResponseMsg { IsSuccess = true, Message = "Driver updated!" };
         }
 
         protected ResponseMsg ExecutePatchDriverStatusAction(int id, string status)
         {
-            using (var db = new OrderContext())
-            {
-                var driver = db.Drivers.FirstOrDefault(d => d.Id == id);
-                if (driver == null)
-                    return new ResponseMsg { IsSuccess = false, Message = "Driver not found!" };
+            using var db = new OrderContext();
 
-                driver.Status = status;
-                db.SaveChanges();
-                return new ResponseMsg { IsSuccess = true, Message = "Status updated!" };
-            }
+            var driver = db.Drivers.FirstOrDefault(d => d.Id == id);
+            if (driver == null)
+                return new ResponseMsg { IsSuccess = false, Message = "Driver not found!" };
+
+            driver.Status = status;
+            db.SaveChanges();
+
+            return new ResponseMsg { IsSuccess = true, Message = "Status updated!" };
         }
 
         protected ResponseMsg ExecuteDeleteDriverAction(int id)
         {
-            using (var db = new OrderContext())
-            {
-                var driver = db.Drivers.FirstOrDefault(d => d.Id == id && !d.IsDeleted);
-                if (driver == null)
-                    return new ResponseMsg { IsSuccess = false, Message = "Driver not found!" };
+            using var db = new OrderContext();
 
-                driver.IsDeleted = true;
-                driver.DeletedAt = DateTime.UtcNow;
-                db.SaveChanges();
-                return new ResponseMsg { IsSuccess = true, Message = "Driver soft-deleted!" };
-            }
+            var driver = db.Drivers.FirstOrDefault(d => d.Id == id && !d.IsDeleted);
+            if (driver == null)
+                return new ResponseMsg { IsSuccess = false, Message = "Driver not found!" };
+
+            driver.IsDeleted = true;
+            driver.DeletedAt = DateTime.UtcNow;
+            db.SaveChanges();
+
+            return new ResponseMsg { IsSuccess = true, Message = "Driver deleted!" };
         }
 
         protected ResponseMsg ExecuteRestoreDriverAction(int id)
         {
-            using (var db = new OrderContext())
-            {
-                var driver = db.Drivers.FirstOrDefault(d => d.Id == id && d.IsDeleted);
-                if (driver == null)
-                    return new ResponseMsg { IsSuccess = false, Message = "Deleted driver not found!" };
+            using var db = new OrderContext();
 
-                driver.IsDeleted = false;
-                driver.DeletedAt = null;
-                db.SaveChanges();
-                return new ResponseMsg { IsSuccess = true, Message = "Driver restored!" };
-            }
+            var driver = db.Drivers.FirstOrDefault(d => d.Id == id && d.IsDeleted);
+            if (driver == null)
+                return new ResponseMsg { IsSuccess = false, Message = "Deleted driver not found!" };
+
+            driver.IsDeleted = false;
+            driver.DeletedAt = null;
+            db.SaveChanges();
+
+            return new ResponseMsg { IsSuccess = true, Message = "Driver restored!" };
         }
 
         protected List<DriverDTO> ExecuteGetDeletedDriversAction()
         {
-            using (var db = new OrderContext())
-            {
-                return db.Drivers.Include(d => d.Vehicle)
-                    .Where(d => d.IsDeleted)
-                    .OrderByDescending(d => d.DeletedAt)
-                    .Select(d => MapToDTO(d)).ToList();
-            }
-        }
+            using var db = new OrderContext();
 
-        private static DriverDTO MapToDTO(DriverData d) => new DriverDTO
-        {
-            Id = d.Id, FullName = d.FullName, Phone = d.Phone, CdlNumber = d.CdlNumber,
-            Status = d.Status, VehicleId = d.VehicleId, VehicleModel = d.Vehicle?.Model,
-            CreatedAt = d.CreatedAt
-        };
+            return db.Drivers
+                .AsNoTracking()
+                .Where(d => d.IsDeleted)
+                .OrderByDescending(d => d.DeletedAt)
+                .Select(d => new DriverDTO
+                {
+                    Id = d.Id,
+                    FullName = d.FullName,
+                    Phone = d.Phone,
+                    CdlNumber = d.CdlNumber,
+                    Status = d.Status,
+                    VehicleId = d.VehicleId,
+                    VehicleModel = d.Vehicle != null ? d.Vehicle.Model : null,
+                    CreatedAt = d.CreatedAt
+                })
+                .ToList();
+        }
     }
 }
