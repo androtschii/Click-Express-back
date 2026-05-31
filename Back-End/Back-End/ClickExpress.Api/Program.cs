@@ -23,6 +23,9 @@ using ClickExpress.BusinessLogic.Functions.Notification;
 using ClickExpress.Api.Middleware;
 using ClickExpress.Api.Hubs;
 using ClickExpress.BusinessLogic.Helpers;
+using ClickExpress.BusinessLogic.Validators;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,7 +42,13 @@ builder.Services.AddResponseCompression(opts =>
 builder.Services.Configure<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProviderOptions>(o =>
     o.Level = System.IO.Compression.CompressionLevel.Fastest);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddFluentValidation(fv =>
+    {
+        fv.RegisterValidatorsFromAssemblyContaining<CreateLeadValidator>();
+        fv.RegisterValidatorsFromAssemblyContaining<ClickExpress.Api.Validators.RegisterRequestValidator>();
+        fv.DisableDataAnnotationsValidation = false;
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
