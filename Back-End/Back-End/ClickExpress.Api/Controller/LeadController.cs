@@ -15,13 +15,15 @@ namespace ClickExpress.Api.Controller
         private readonly ILeadActions _leadActions;
         private readonly IEmailService _email;
         private readonly IBackgroundQueue _queue;
+        private readonly IAuditLogService _audit;
         private readonly ILogger<LeadController> _logger;
 
-        public LeadController(ILeadActions leadActions, IEmailService email, IBackgroundQueue queue, ILogger<LeadController> logger)
+        public LeadController(ILeadActions leadActions, IEmailService email, IBackgroundQueue queue, IAuditLogService audit, ILogger<LeadController> logger)
         {
             _leadActions = leadActions;
             _email = email;
             _queue = queue;
+            _audit = audit;
             _logger = logger;
         }
 
@@ -75,7 +77,8 @@ namespace ClickExpress.Api.Controller
         {
             var result = _leadActions.ResponseUpdateLeadStatusAction(id, dto.Status);
             if (!result.IsSuccess) return NotFound(new { message = result.Message });
-            var admin = User.FindFirst(ClaimTypes.Name)?.Value;
+            var admin = User.FindFirst(ClaimTypes.Name)?.Value ?? "unknown";
+            _audit.Log("StatusChange", "Lead", id, admin, $"Status → {dto.Status}");
             _logger.LogInformation("Admin {Admin} changed lead {Id} status to {Status}", admin, id, dto.Status);
             return Ok(new { id, status = dto.Status });
         }
@@ -86,6 +89,9 @@ namespace ClickExpress.Api.Controller
         {
             var result = _leadActions.ResponseDeleteLeadAction(id);
             if (!result.IsSuccess) return NotFound(new { message = result.Message });
+            var admin = User.FindFirst(ClaimTypes.Name)?.Value ?? "unknown";
+            _audit.Log("Delete", "Lead", id, admin);
+            _logger.LogInformation("Admin {Admin} deleted lead {Id}", admin, id);
             return NoContent();
         }
 
