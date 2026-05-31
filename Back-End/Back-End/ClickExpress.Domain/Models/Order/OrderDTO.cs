@@ -20,5 +20,6 @@ namespace ClickExpress.Domain.Models.Order
         public decimal? TotalPrice { get; set; }
         public string? CurrentLocation { get; set; }
         public DateTime? EstimatedArrival { get; set; }
+        public string? TrackingCode { get; set; }
     }
 }

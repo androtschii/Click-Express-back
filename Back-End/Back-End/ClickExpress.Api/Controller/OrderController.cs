@@ -54,6 +54,30 @@ namespace ClickExpress.Api.Controller
         [Authorize(Roles = "Admin")]
         public IActionResult GetAll() => Ok(_orderActions.GetAllOrdersAction());
 
+        [HttpGet("track/{code}")]
+        [AllowAnonymous]
+        public IActionResult TrackByCode(string code)
+        {
+            if (!ClickExpress.BusinessLogic.Helpers.TrackingCodeHelper.IsValid(code))
+                return BadRequest(new { message = "Invalid tracking code format" });
+
+            var order = _orderActions.GetOrderByTrackingCodeAction(code);
+            if (order == null) return NotFound(new { message = "Order not found" });
+
+            return Ok(new
+            {
+                order.TrackingCode,
+                order.Status,
+                order.PickupAddress,
+                order.DeliveryAddress,
+                order.PickupDate,
+                order.DeliveryDate,
+                order.CurrentLocation,
+                order.EstimatedArrival,
+                order.CreatedAt
+            });
+        }
+
         [HttpGet("paged")]
         [Authorize(Roles = "Admin")]
         public IActionResult GetPaged(

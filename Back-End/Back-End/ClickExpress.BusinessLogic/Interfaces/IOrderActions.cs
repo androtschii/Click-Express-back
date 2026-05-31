@@ -15,5 +15,6 @@ namespace ClickExpress.BusinessLogic.Interfaces
         List<OrderStatusHistoryDTO> GetOrderTrackingAction(int orderId);
         object GetOrderStatsAction();
         PagedResult<OrderDTO> GetOrdersPagedAction(string? status, int? userId, string? search, int page, int pageSize);
+        OrderDTO? GetOrderByTrackingCodeAction(string code);
     }
 }

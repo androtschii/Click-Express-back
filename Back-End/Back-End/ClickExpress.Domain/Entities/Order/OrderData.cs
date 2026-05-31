@@ -23,6 +23,7 @@ namespace ClickExpress.Domain.Entities.Order
         public decimal? TotalPrice { get; set; }
         public string? CurrentLocation { get; set; }
         public DateTime? EstimatedArrival { get; set; }
+        public string? TrackingCode { get; set; }
 
         public UserData User { get; set; } = null!;
         public ProductData Product { get; set; } = null!;

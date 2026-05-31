@@ -52,28 +52,39 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "ClickExpress API",
+        Version = "v1",
+        Description = "B2B logistics platform API",
+    });
+
+    c.TagActionsBy(api =>
+    {
+        var tag = api.RelativePath?.Split('/').Skip(1).Take(1).FirstOrDefault() ?? "Other";
+        return [char.ToUpper(tag[0]) + tag[1..]];
+    });
+
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
         Type = SecuritySchemeType.Http,
         Scheme = "Bearer",
         BearerFormat = "JWT",
-        In = ParameterLocation.Header
+        In = ParameterLocation.Header,
+        Description = "Enter: Bearer {token}"
     });
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecurityScheme
             {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
             },
             Array.Empty<string>()
         }
     });
+    c.OrderActionsBy(api => api.RelativePath);
 });
 
 builder.Services.AddScoped<IUserActions, UserFlow>();

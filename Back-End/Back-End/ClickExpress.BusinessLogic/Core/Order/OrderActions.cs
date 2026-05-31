@@ -3,6 +3,7 @@ using ClickExpress.DataAccess.Context;
 using ClickExpress.Domain.Entities.Order;
 using ClickExpress.Domain.Models.Order;
 using ClickExpress.Domain.Models.Base;
+using ClickExpress.BusinessLogic.Helpers;
 
 namespace ClickExpress.BusinessLogic.Core.Order
 {
@@ -24,7 +25,7 @@ namespace ClickExpress.BusinessLogic.Core.Order
                     VehicleId = o.VehicleId, VehicleModel = o.Vehicle != null ? o.Vehicle.Model : null,
                     DriverId = o.DriverId, DriverName = o.Driver != null ? o.Driver.FullName : null,
                     TotalPrice = o.TotalPrice, CurrentLocation = o.CurrentLocation,
-                    EstimatedArrival = o.EstimatedArrival
+                    EstimatedArrival = o.EstimatedArrival, TrackingCode = o.TrackingCode
                 })
                 .ToList();
         }
@@ -46,7 +47,7 @@ namespace ClickExpress.BusinessLogic.Core.Order
                     VehicleId = o.VehicleId, VehicleModel = o.Vehicle != null ? o.Vehicle.Model : null,
                     DriverId = o.DriverId, DriverName = o.Driver != null ? o.Driver.FullName : null,
                     TotalPrice = o.TotalPrice, CurrentLocation = o.CurrentLocation,
-                    EstimatedArrival = o.EstimatedArrival
+                    EstimatedArrival = o.EstimatedArrival, TrackingCode = o.TrackingCode
                 })
                 .ToList();
         }
@@ -67,7 +68,7 @@ namespace ClickExpress.BusinessLogic.Core.Order
                     VehicleId = o.VehicleId, VehicleModel = o.Vehicle != null ? o.Vehicle.Model : null,
                     DriverId = o.DriverId, DriverName = o.Driver != null ? o.Driver.FullName : null,
                     TotalPrice = o.TotalPrice, CurrentLocation = o.CurrentLocation,
-                    EstimatedArrival = o.EstimatedArrival
+                    EstimatedArrival = o.EstimatedArrival, TrackingCode = o.TrackingCode
                 })
                 .FirstOrDefault();
         }
@@ -112,7 +113,7 @@ namespace ClickExpress.BusinessLogic.Core.Order
                     VehicleId = o.VehicleId, VehicleModel = o.Vehicle != null ? o.Vehicle.Model : null,
                     DriverId = o.DriverId, DriverName = o.Driver != null ? o.Driver.FullName : null,
                     TotalPrice = o.TotalPrice, CurrentLocation = o.CurrentLocation,
-                    EstimatedArrival = o.EstimatedArrival
+                    EstimatedArrival = o.EstimatedArrival, TrackingCode = o.TrackingCode
                 })
                 .ToList();
 
@@ -125,6 +126,27 @@ namespace ClickExpress.BusinessLogic.Core.Order
             };
         }
 
+        protected OrderDTO? ExecuteGetOrderByTrackingCodeAction(string code)
+        {
+            using var db = new OrderContext();
+            return db.Orders
+                .AsNoTracking()
+                .Where(o => o.TrackingCode == code)
+                .Select(o => new OrderDTO
+                {
+                    Id = o.Id, UserId = o.UserId, ProductId = o.ProductId,
+                    ProductName = o.Product != null ? o.Product.Name : string.Empty,
+                    Status = o.Status, CreatedAt = o.CreatedAt, Notes = o.Notes,
+                    PickupAddress = o.PickupAddress, DeliveryAddress = o.DeliveryAddress,
+                    PickupDate = o.PickupDate, DeliveryDate = o.DeliveryDate,
+                    VehicleId = o.VehicleId, VehicleModel = o.Vehicle != null ? o.Vehicle.Model : null,
+                    DriverId = o.DriverId, DriverName = o.Driver != null ? o.Driver.FullName : null,
+                    TotalPrice = o.TotalPrice, CurrentLocation = o.CurrentLocation,
+                    EstimatedArrival = o.EstimatedArrival, TrackingCode = o.TrackingCode
+                })
+                .FirstOrDefault();
+        }
+
         protected ResponseAction ExecuteCreateOrderAction(int userId, CreateOrderDTO dto)
         {
             using var db = new OrderContext();
@@ -135,7 +157,8 @@ namespace ClickExpress.BusinessLogic.Core.Order
                 CreatedAt = DateTime.UtcNow, Notes = dto.Notes,
                 PickupAddress = dto.PickupAddress, DeliveryAddress = dto.DeliveryAddress,
                 PickupDate = dto.PickupDate, DeliveryDate = dto.DeliveryDate,
-                VehicleId = dto.VehicleId, DriverId = dto.DriverId, TotalPrice = dto.TotalPrice
+                VehicleId = dto.VehicleId, DriverId = dto.DriverId, TotalPrice = dto.TotalPrice,
+                TrackingCode = TrackingCodeHelper.Generate()
             };
             db.Orders.Add(order);
             db.SaveChanges();
