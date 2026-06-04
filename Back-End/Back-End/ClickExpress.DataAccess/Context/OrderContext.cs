@@ -38,7 +38,21 @@ namespace ClickExpress.DataAccess.Context
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer(DbSession.ConnectionStrings);
+            var connStr = new Microsoft.Data.SqlClient.SqlConnectionStringBuilder(DbSession.ConnectionStrings)
+            {
+                MaxPoolSize = 100,
+                MinPoolSize = 5,
+                ConnectTimeout = 15
+            }.ConnectionString;
+
+            optionsBuilder.UseSqlServer(connStr, sqlOptions =>
+            {
+                sqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 3,
+                    maxRetryDelay: TimeSpan.FromSeconds(6),
+                    errorNumbersToAdd: null);
+                sqlOptions.CommandTimeout(30);
+            });
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

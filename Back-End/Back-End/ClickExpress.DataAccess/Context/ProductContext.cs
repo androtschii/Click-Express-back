@@ -9,7 +9,7 @@ namespace ClickExpress.DataAccess.Context
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer(DbSession.ConnectionStrings);
+            DbSession.Configure(optionsBuilder);
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
