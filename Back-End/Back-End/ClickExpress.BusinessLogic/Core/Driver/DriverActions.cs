@@ -161,5 +161,45 @@ namespace ClickExpress.BusinessLogic.Core.Driver
                 })
                 .ToList();
         }
+
+        protected PagedResult<DriverDTO> ExecuteGetDriversPagedAction(QueryOptions opts, string? status)
+        {
+            using var db = new OrderContext();
+
+            var query = db.Drivers
+                .AsNoTracking()
+                .Where(d => !d.IsDeleted
+                         && (string.IsNullOrWhiteSpace(status) || d.Status == status));
+
+            if (!string.IsNullOrWhiteSpace(opts.Search))
+                query = query.Where(d => d.FullName.Contains(opts.Search) || d.Phone.Contains(opts.Search));
+
+            var total = query.Count();
+
+            var items = query
+                .OrderBy(d => d.FullName)
+                .Skip((opts.Page - 1) * opts.PageSize)
+                .Take(opts.PageSize)
+                .Select(d => new DriverDTO
+                {
+                    Id = d.Id,
+                    FullName = d.FullName,
+                    Phone = d.Phone,
+                    CdlNumber = d.CdlNumber,
+                    Status = d.Status,
+                    VehicleId = d.VehicleId,
+                    VehicleModel = d.Vehicle != null ? d.Vehicle.Model : null,
+                    CreatedAt = d.CreatedAt
+                })
+                .ToList();
+
+            return new PagedResult<DriverDTO>
+            {
+                Items = items,
+                TotalCount = total,
+                Page = opts.Page,
+                PageSize = opts.PageSize
+            };
+        }
     }
 }

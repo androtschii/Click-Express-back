@@ -6,6 +6,7 @@ namespace ClickExpress.BusinessLogic.Interfaces
     public interface IDriverActions
     {
         List<DriverDTO> GetAllDriversAction(string? status);
+        PagedResult<DriverDTO> GetDriversPagedAction(QueryOptions opts, string? status);
         DriverDTO? GetDriverByIdAction(int id);
         ResponseAction ResponseCreateDriverAction(CreateDriverDTO dto);
         ResponseMsg ResponseUpdateDriverAction(int id, UpdateDriverDTO dto);

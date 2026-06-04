@@ -101,5 +101,45 @@ namespace ClickExpress.BusinessLogic.Core.News
 
             return new ResponseMsg { IsSuccess = true, Message = "Article deleted!" };
         }
+
+        protected PagedResult<NewsArticleDTO> ExecuteGetNewsPagedAction(QueryOptions opts, bool onlyPublished)
+        {
+            using var db = new OrderContext();
+
+            var query = db.NewsArticles
+                .AsNoTracking()
+                .Where(n => !onlyPublished || n.IsPublished);
+
+            if (!string.IsNullOrWhiteSpace(opts.Search))
+                query = query.Where(n => n.Title.Contains(opts.Search) || n.Content.Contains(opts.Search));
+
+            var total = query.Count();
+
+            var items = (opts.Sort?.ToLower() == "oldest"
+                    ? query.OrderBy(n => n.PublishedAt)
+                    : query.OrderByDescending(n => n.PublishedAt))
+                .Skip((opts.Page - 1) * opts.PageSize)
+                .Take(opts.PageSize)
+                .Select(n => new NewsArticleDTO
+                {
+                    Id = n.Id,
+                    Title = n.Title,
+                    Content = n.Content,
+                    ImageUrl = n.ImageUrl,
+                    AuthorId = n.AuthorId,
+                    AuthorName = n.Author.Username,
+                    PublishedAt = n.PublishedAt,
+                    IsPublished = n.IsPublished
+                })
+                .ToList();
+
+            return new PagedResult<NewsArticleDTO>
+            {
+                Items = items,
+                TotalCount = total,
+                Page = opts.Page,
+                PageSize = opts.PageSize
+            };
+        }
     }
 }

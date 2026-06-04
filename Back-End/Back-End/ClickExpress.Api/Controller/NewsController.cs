@@ -5,6 +5,7 @@ using ClickExpress.BusinessLogic.Interfaces;
 using ClickExpress.BusinessLogic.Helpers;
 using ClickExpress.DataAccess.Context;
 using ClickExpress.Domain.Models.News;
+using ClickExpress.Domain.Models.Base;
 
 namespace ClickExpress.Api.Controller
 {
@@ -21,6 +22,16 @@ namespace ClickExpress.Api.Controller
             _newsActions = newsActions;
             _cache = cache;
             _logger = logger;
+        }
+
+        [HttpGet("paged")]
+        [AllowAnonymous]
+        public IActionResult GetPaged([FromQuery] int page = 1, [FromQuery] int pageSize = 10,
+            [FromQuery] string? search = null, [FromQuery] string? sort = null,
+            [FromQuery] bool onlyPublished = true)
+        {
+            var opts = new QueryOptions { Page = page, PageSize = pageSize, Search = search, Sort = sort };
+            return Ok(_newsActions.GetNewsPagedAction(opts, onlyPublished));
         }
 
         [HttpGet]
@@ -97,6 +108,19 @@ namespace ClickExpress.Api.Controller
 
             _cache.RemoveByPrefix("news:");
             return NoContent();
+        }
+
+        [HttpGet("stats")]
+        [Authorize(Roles = "Admin")]
+        public IActionResult GetStats()
+        {
+            var all = _newsActions.GetAllNewsAction(false);
+            return Ok(new
+            {
+                total = all.Count,
+                published = all.Count(a => a.IsPublished),
+                drafts = all.Count(a => !a.IsPublished)
+            });
         }
     }
 }

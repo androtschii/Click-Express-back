@@ -4,6 +4,7 @@ using System.Security.Claims;
 using ClickExpress.BusinessLogic.Helpers;
 using ClickExpress.BusinessLogic.Interfaces;
 using ClickExpress.Domain.Models.Driver;
+using ClickExpress.Domain.Models.Base;
 
 namespace ClickExpress.Api.Controller
 {
@@ -18,6 +19,15 @@ namespace ClickExpress.Api.Controller
         {
             _driverActions = driverActions;
             _audit = audit;
+        }
+
+        [HttpGet("paged")]
+        [Authorize(Roles = "Admin")]
+        public IActionResult GetPaged([FromQuery] int page = 1, [FromQuery] int pageSize = 15,
+            [FromQuery] string? search = null, [FromQuery] string? status = null)
+        {
+            var opts = new QueryOptions { Page = page, PageSize = pageSize, Search = search };
+            return Ok(_driverActions.GetDriversPagedAction(opts, status));
         }
 
         [HttpGet]

@@ -6,6 +6,7 @@ namespace ClickExpress.BusinessLogic.Interfaces
     public interface INewsActions
     {
         List<NewsArticleDTO> GetAllNewsAction(bool onlyPublished);
+        PagedResult<NewsArticleDTO> GetNewsPagedAction(QueryOptions opts, bool onlyPublished);
         NewsArticleDTO? GetNewsByIdAction(int id);
         ResponseAction ResponseCreateNewsAction(int authorId, CreateNewsDTO dto);
         ResponseMsg ResponseUpdateNewsAction(int id, CreateNewsDTO dto);

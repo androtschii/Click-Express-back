@@ -18,14 +18,17 @@ namespace ClickExpress.Api.Controller
         private readonly IEmailService _email;
         private readonly IBackgroundQueue _queue;
         private readonly ILogger<AuthController> _logger;
+        private readonly IAuditLogService _audit;
 
-        public AuthController(IConfiguration config, IUserActions userActions, IEmailService email, IBackgroundQueue queue, ILogger<AuthController> logger)
+        public AuthController(IConfiguration config, IUserActions userActions, IEmailService email,
+            IBackgroundQueue queue, ILogger<AuthController> logger, IAuditLogService audit)
         {
             _config = config;
             _userActions = userActions;
             _email = email;
             _queue = queue;
             _logger = logger;
+            _audit = audit;
         }
 
         [HttpGet("me")]
@@ -49,6 +52,7 @@ namespace ClickExpress.Api.Controller
             if (!result.IsSuccess)
             {
                 _logger.LogWarning("Failed login attempt for {Username}", request.Username);
+                _audit.Log("LoginFailed", "Auth", 0, request.Username, "Invalid credentials");
                 return Unauthorized(new { message = "Invalid username or password" });
             }
 
@@ -59,6 +63,7 @@ namespace ClickExpress.Api.Controller
             _userActions.ResponseSaveRefreshTokenAction(user.Id, refresh, DateTime.UtcNow.AddDays(7));
 
             _logger.LogInformation("User {Username} logged in", user.Username);
+            _audit.Log("Login", "Auth", user.Id, user.Username);
             return Ok(new { token, refreshToken = refresh, username = user.Username, role = user.Role });
         }
 
@@ -85,6 +90,7 @@ namespace ClickExpress.Api.Controller
             _userActions.ResponseSaveRefreshTokenAction(user.Id, refresh, DateTime.UtcNow.AddDays(7));
 
             _logger.LogInformation("New user registered: {Username}", user.Username);
+            _audit.Log("Register", "Auth", user.Id, user.Username);
             return Ok(new { token, refreshToken = refresh, username = user.Username, role = user.Role });
         }
 
@@ -112,16 +118,22 @@ namespace ClickExpress.Api.Controller
         [HttpPost("logout")]
         public IActionResult Logout([FromBody] RefreshRequest req)
         {
+            string? username = null;
+            int userId = 0;
             using (var db = new UserContext())
             {
                 var u = db.Users.FirstOrDefault(u => u.RefreshToken == req.RefreshToken);
                 if (u != null)
                 {
+                    username = u.Username;
+                    userId = u.Id;
                     u.RefreshToken = null;
                     u.RefreshTokenExpiry = null;
                     db.SaveChanges();
                 }
             }
+            if (username != null)
+                _audit.Log("Logout", "Auth", userId, username);
             return Ok(new { message = "Logged out" });
         }
 
@@ -180,6 +192,7 @@ namespace ClickExpress.Api.Controller
                 db.SaveChanges();
 
                 _logger.LogInformation("User {Username} changed password", username);
+                _audit.Log("PasswordChanged", "Auth", u.Id, username);
             }
             return Ok(new { message = "Password updated" });
         }
@@ -206,6 +219,8 @@ namespace ClickExpress.Api.Controller
                 u.RefreshToken = null;
                 u.RefreshTokenExpiry = null;
                 db.SaveChanges();
+                _audit.Log("PasswordReset", "Auth", u.Id, u.Username);
+                _logger.LogInformation("Password reset completed for {Username}", u.Username);
             }
             return Ok(new { message = "Password updated" });
         }

@@ -127,5 +127,52 @@ namespace ClickExpress.BusinessLogic.Core.Vehicle
 
             return new ResponseMsg { IsSuccess = true, Message = "Vehicle deleted!" };
         }
+
+        protected PagedResult<VehicleDTO> ExecuteGetVehiclesPagedAction(QueryOptions opts, string? type, bool? available)
+        {
+            using var db = new OrderContext();
+
+            var query = db.Vehicles
+                .AsNoTracking()
+                .Where(v => (string.IsNullOrWhiteSpace(type) || v.Type == type)
+                         && (!available.HasValue || v.IsAvailable == available.Value));
+
+            if (!string.IsNullOrWhiteSpace(opts.Search))
+                query = query.Where(v => v.Model.Contains(opts.Search) || v.PlateNumber.Contains(opts.Search));
+
+            var total = query.Count();
+
+            var orderedQuery = opts.Sort?.ToLower() switch
+            {
+                "capacity" => query.OrderBy(v => v.Capacity),
+                "year" => query.OrderByDescending(v => v.Year),
+                _ => query.OrderBy(v => v.Model)
+            };
+
+            var items = orderedQuery
+                .Skip((opts.Page - 1) * opts.PageSize)
+                .Take(opts.PageSize)
+                .Select(v => new VehicleDTO
+                {
+                    Id = v.Id,
+                    Model = v.Model,
+                    PlateNumber = v.PlateNumber,
+                    Type = v.Type,
+                    Capacity = v.Capacity,
+                    Year = v.Year,
+                    IsAvailable = v.IsAvailable,
+                    ImageUrl = v.ImageUrl,
+                    CreatedAt = v.CreatedAt
+                })
+                .ToList();
+
+            return new PagedResult<VehicleDTO>
+            {
+                Items = items,
+                TotalCount = total,
+                Page = opts.Page,
+                PageSize = opts.PageSize
+            };
+        }
     }
 }

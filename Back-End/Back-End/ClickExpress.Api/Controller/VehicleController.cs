@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using ClickExpress.BusinessLogic.Interfaces;
 using ClickExpress.BusinessLogic.Helpers;
 using ClickExpress.Domain.Models.Vehicle;
+using ClickExpress.Domain.Models.Base;
 
 namespace ClickExpress.Api.Controller
 {
@@ -17,6 +18,16 @@ namespace ClickExpress.Api.Controller
         {
             _vehicleActions = vehicleActions;
             _cache = cache;
+        }
+
+        [HttpGet("paged")]
+        [AllowAnonymous]
+        public IActionResult GetPaged([FromQuery] int page = 1, [FromQuery] int pageSize = 12,
+            [FromQuery] string? search = null, [FromQuery] string? sort = null,
+            [FromQuery] string? type = null, [FromQuery] bool? available = null)
+        {
+            var opts = new QueryOptions { Page = page, PageSize = pageSize, Search = search, Sort = sort };
+            return Ok(_vehicleActions.GetVehiclesPagedAction(opts, type, available));
         }
 
         [HttpGet]
@@ -79,6 +90,21 @@ namespace ClickExpress.Api.Controller
             if (!result.IsSuccess) return NotFound(new { message = result.Message });
             _cache.RemoveByPrefix("vehicles:");
             return NoContent();
+        }
+
+        [HttpGet("stats")]
+        [Authorize(Roles = "Admin")]
+        public IActionResult GetStats()
+        {
+            var all = _vehicleActions.GetAllVehiclesAction(null, null);
+            return Ok(new
+            {
+                total = all.Count,
+                available = all.Count(v => v.IsAvailable),
+                unavailable = all.Count(v => !v.IsAvailable),
+                byType = all.GroupBy(v => v.Type)
+                            .Select(g => new { type = g.Key, count = g.Count() })
+            });
         }
     }
 }
