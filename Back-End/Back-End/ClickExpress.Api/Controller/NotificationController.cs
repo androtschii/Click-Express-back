@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using ClickExpress.BusinessLogic.Interfaces;
 using ClickExpress.Domain.Models.Notification;
+using ClickExpress.Domain.Models.Base;
+using Microsoft.AspNetCore.Http;
 
 namespace ClickExpress.Api.Controller
 {
@@ -21,9 +23,11 @@ namespace ClickExpress.Api.Controller
         private int UserId => int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
 
         [HttpGet]
+        [ProducesResponseType(typeof(List<NotificationDTO>), StatusCodes.Status200OK)]
         public IActionResult GetAll() => Ok(_actions.GetAllForUserAction(UserId));
 
         [HttpGet("paged")]
+        [ProducesResponseType(typeof(PagedResult<NotificationDTO>), StatusCodes.Status200OK)]
         public IActionResult GetPaged(
             [FromQuery] bool? unreadOnly,
             [FromQuery] int page = 1,

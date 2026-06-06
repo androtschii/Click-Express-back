@@ -6,6 +6,8 @@ using ClickExpress.BusinessLogic.Interfaces;
 using ClickExpress.BusinessLogic.Helpers;
 using ClickExpress.DataAccess.Context;
 using ClickExpress.Domain.Models.Review;
+using ClickExpress.Domain.Models.Base;
+using Microsoft.AspNetCore.Http;
 
 namespace ClickExpress.Api.Controller
 {
@@ -31,11 +33,13 @@ namespace ClickExpress.Api.Controller
             var username = User.FindFirst(ClaimTypes.Name)?.Value;
             if (username == null) return null;
             using var db = new UserContext();
-            return db.Users.FirstOrDefault(u => u.Username == username)?.Id;
+            return CompiledQueries.GetUserByUsername(db, username)?.Id;
         }
 
+        /// <summary>Returns all reviews. Pass onlyApproved=false (Admin only) to include pending.</summary>
         [HttpGet]
         [AllowAnonymous]
+        [ProducesResponseType(typeof(List<ReviewDTO>), StatusCodes.Status200OK)]
         public IActionResult GetAll([FromQuery] bool onlyApproved = true)
         {
             if (!onlyApproved) return Ok(_reviewActions.GetAllReviewsAction(false));
@@ -49,8 +53,10 @@ namespace ClickExpress.Api.Controller
             return Ok(result);
         }
 
+        /// <summary>Paged list of reviews with optional sorting.</summary>
         [HttpGet("paged")]
         [AllowAnonymous]
+        [ProducesResponseType(typeof(PagedResult<ReviewDTO>), StatusCodes.Status200OK)]
         public IActionResult GetPaged(
             [FromQuery] bool onlyApproved = true,
             [FromQuery] int page = 1,
@@ -60,6 +66,8 @@ namespace ClickExpress.Api.Controller
 
         [HttpGet("{id}")]
         [AllowAnonymous]
+        [ProducesResponseType(typeof(ReviewDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult GetById(int id)
         {
             var review = _reviewActions.GetReviewByIdAction(id);
@@ -67,9 +75,13 @@ namespace ClickExpress.Api.Controller
             return Ok(review);
         }
 
+        /// <summary>Submit a new review. Requires authentication. Rate limited to 10 per 5 minutes per IP.</summary>
         [HttpPost]
         [Authorize]
         [EnableRateLimiting("write")]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public IActionResult Create([FromBody] CreateReviewDTO dto)
         {
             var userId = GetUserId();
@@ -85,6 +97,8 @@ namespace ClickExpress.Api.Controller
 
         [HttpPatch("{id}/approve")]
         [Authorize(Roles = "Admin")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Approve(int id)
         {
             var result = _reviewActions.ResponseApproveReviewAction(id);
@@ -98,6 +112,8 @@ namespace ClickExpress.Api.Controller
 
         [HttpPatch("{id}/reject")]
         [Authorize(Roles = "Admin")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Reject(int id)
         {
             var result = _reviewActions.ResponseRejectReviewAction(id);
@@ -111,6 +127,9 @@ namespace ClickExpress.Api.Controller
 
         [HttpPut("{id}")]
         [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public IActionResult Update(int id, [FromBody] UpdateReviewDTO dto)
         {
             var userId = GetUserId();
@@ -122,6 +141,9 @@ namespace ClickExpress.Api.Controller
 
         [HttpDelete("{id}")]
         [Authorize]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public IActionResult Delete(int id)
         {
             var review = _reviewActions.GetReviewByIdAction(id);

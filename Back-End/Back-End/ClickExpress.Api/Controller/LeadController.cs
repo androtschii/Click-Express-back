@@ -5,6 +5,8 @@ using System.Security.Claims;
 using ClickExpress.BusinessLogic.Interfaces;
 using ClickExpress.BusinessLogic.Helpers;
 using ClickExpress.Domain.Models.Lead;
+using ClickExpress.Domain.Models.Base;
+using Microsoft.AspNetCore.Http;
 
 namespace ClickExpress.Api.Controller
 {
@@ -27,9 +29,13 @@ namespace ClickExpress.Api.Controller
             _logger = logger;
         }
 
+        /// <summary>Submit a quote/contact request. Sends email notifications to admin and customer.</summary>
         [HttpPost]
         [AllowAnonymous]
         [EnableRateLimiting("write")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
         public IActionResult Submit([FromBody] CreateLeadDTO dto)
         {
             var result = _leadActions.ResponseSubmitLeadAction(dto);
@@ -51,10 +57,12 @@ namespace ClickExpress.Api.Controller
 
         [HttpGet]
         [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(List<LeadDTO>), StatusCodes.Status200OK)]
         public IActionResult GetAll([FromQuery] string? status) => Ok(_leadActions.GetAllLeadsAction(status));
 
         [HttpGet("paged")]
         [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(PagedResult<LeadDTO>), StatusCodes.Status200OK)]
         public IActionResult GetPaged(
             [FromQuery] string? status,
             [FromQuery] string? search,

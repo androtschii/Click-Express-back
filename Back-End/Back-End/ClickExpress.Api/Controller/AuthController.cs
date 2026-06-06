@@ -6,6 +6,7 @@ using ClickExpress.BusinessLogic.Helpers;
 using ClickExpress.BusinessLogic.Interfaces;
 using ClickExpress.DataAccess.Context;
 using ClickExpress.Domain.Models.User;
+using Microsoft.AspNetCore.Http;
 
 namespace ClickExpress.Api.Controller
 {
@@ -31,8 +32,11 @@ namespace ClickExpress.Api.Controller
             _audit = audit;
         }
 
+        /// <summary>Returns the currently authenticated user's profile.</summary>
         [HttpGet("me")]
         [Authorize]
+        [ProducesResponseType(typeof(UserDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public IActionResult Me()
         {
             var username = User.FindFirst(ClaimTypes.Name)?.Value;
@@ -42,8 +46,12 @@ namespace ClickExpress.Api.Controller
             return Ok(user);
         }
 
+        /// <summary>Authenticate with username and password. Returns JWT + refresh token.</summary>
         [HttpPost("login")]
         [EnableRateLimiting("auth")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
         public IActionResult Login([FromBody] LoginRequest request)
         {
             var authDto = new UserAuthDTO { Username = request.Username, Password = request.Password };
@@ -67,8 +75,12 @@ namespace ClickExpress.Api.Controller
             return Ok(new { token, refreshToken = refresh, username = user.Username, role = user.Role });
         }
 
+        /// <summary>Register a new user account. Returns JWT on success.</summary>
         [HttpPost("register")]
         [EnableRateLimiting("register")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
         public IActionResult Register([FromBody] RegisterRequest request)
         {
             var dto = new UserRegDTO
@@ -94,15 +106,19 @@ namespace ClickExpress.Api.Controller
             return Ok(new { token, refreshToken = refresh, username = user.Username, role = user.Role });
         }
 
+        /// <summary>Exchange a refresh token for a new JWT + refresh token pair.</summary>
         [HttpPost("refresh")]
         [EnableRateLimiting("refresh")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public IActionResult Refresh([FromBody] RefreshRequest req)
         {
             if (string.IsNullOrWhiteSpace(req.RefreshToken))
                 return BadRequest(new { message = "Refresh token is required" });
 
             using var db = new UserContext();
-            var u = db.Users.FirstOrDefault(u => u.RefreshToken == req.RefreshToken);
+            var u = CompiledQueries.GetUserByRefreshToken(db, req.RefreshToken);
             if (u == null || u.RefreshTokenExpiry == null || u.RefreshTokenExpiry < DateTime.UtcNow)
                 return Unauthorized(new { message = "Refresh token is invalid or expired" });
 
@@ -115,14 +131,16 @@ namespace ClickExpress.Api.Controller
             return Ok(new { token = newToken, refreshToken = newRefresh, username = u.Username, role = u.Role });
         }
 
+        /// <summary>Invalidate the current refresh token and end the session.</summary>
         [HttpPost("logout")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public IActionResult Logout([FromBody] RefreshRequest req)
         {
             string? username = null;
             int userId = 0;
             using (var db = new UserContext())
             {
-                var u = db.Users.FirstOrDefault(u => u.RefreshToken == req.RefreshToken);
+                var u = CompiledQueries.GetUserByRefreshToken(db, req.RefreshToken ?? "");
                 if (u != null)
                 {
                     username = u.Username;
@@ -137,8 +155,11 @@ namespace ClickExpress.Api.Controller
             return Ok(new { message = "Logged out" });
         }
 
+        /// <summary>Request a password reset link sent to the registered email.</summary>
         [HttpPost("forgot-password")]
         [EnableRateLimiting("auth")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
         public IActionResult ForgotPassword([FromBody] ForgotPasswordRequest req)
         {
             using (var db = new UserContext())
@@ -167,6 +188,9 @@ namespace ClickExpress.Api.Controller
 
         [HttpPost("change-password")]
         [Authorize]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public IActionResult ChangePassword([FromBody] ChangePasswordRequest req)
         {
             if (string.IsNullOrWhiteSpace(req.CurrentPassword) || string.IsNullOrWhiteSpace(req.NewPassword))
@@ -197,8 +221,12 @@ namespace ClickExpress.Api.Controller
             return Ok(new { message = "Password updated" });
         }
 
+        /// <summary>Reset password using the token received by email.</summary>
         [HttpPost("reset-password")]
         [EnableRateLimiting("reset")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
         public IActionResult ResetPassword([FromBody] ResetPasswordRequest req)
         {
             if (string.IsNullOrWhiteSpace(req.Token) || string.IsNullOrWhiteSpace(req.NewPassword))

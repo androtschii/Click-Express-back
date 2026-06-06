@@ -4,6 +4,7 @@ using System.Security.Claims;
 using ClickExpress.BusinessLogic.Helpers;
 using ClickExpress.BusinessLogic.Interfaces;
 using ClickExpress.Domain.Models.Product;
+using Microsoft.AspNetCore.Http;
 
 namespace ClickExpress.Api.Controller
 {
@@ -30,8 +31,11 @@ namespace ClickExpress.Api.Controller
             _audit = audit;
         }
 
+        /// <summary>Returns all active products (loads) with optional filters and sorting.</summary>
+        /// <param name="sortBy">Allowed: newest, oldest, price_asc, price_desc, popular</param>
         [HttpGet]
         [AllowAnonymous]
+        [ProducesResponseType(typeof(List<ProductDTO>), StatusCodes.Status200OK)]
         public IActionResult GetAll(
             [FromQuery] string? search,
             [FromQuery] string? category,

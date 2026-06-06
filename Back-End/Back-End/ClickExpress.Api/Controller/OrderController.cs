@@ -10,6 +10,8 @@ using ClickExpress.BusinessLogic.Interfaces;
 using ClickExpress.DataAccess.Context;
 using ClickExpress.Domain.Entities.Order;
 using ClickExpress.Domain.Models.Order;
+using ClickExpress.Domain.Models.Base;
+using Microsoft.AspNetCore.Http;
 
 namespace ClickExpress.Api.Controller
 {
@@ -40,22 +42,28 @@ namespace ClickExpress.Api.Controller
             var username = User.FindFirst(ClaimTypes.Name)?.Value;
             if (username == null) return null;
             using var db = new UserContext();
-            return db.Users.FirstOrDefault(u => u.Username == username)?.Id;
+            return CompiledQueries.GetUserByUsername(db, username)?.Id;
         }
 
         private (string? Email, string Username) GetUserContact(int userId)
         {
             using var db = new UserContext();
-            var u = db.Users.FirstOrDefault(u => u.Id == userId);
+            var u = CompiledQueries.GetUserById(db, userId);
             return (u?.Email, u?.Username ?? "");
         }
 
+        /// <summary>Admin: returns all orders in the system.</summary>
         [HttpGet]
         [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(List<OrderDTO>), StatusCodes.Status200OK)]
         public IActionResult GetAll() => Ok(_orderActions.GetAllOrdersAction());
 
+        /// <summary>Public endpoint: track a shipment by its CE-YYYYMMDD-XXXX code.</summary>
         [HttpGet("track/{code}")]
         [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult TrackByCode(string code)
         {
             if (!ClickExpress.BusinessLogic.Helpers.TrackingCodeHelper.IsValid(code))
@@ -80,6 +88,7 @@ namespace ClickExpress.Api.Controller
 
         [HttpGet("paged")]
         [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(PagedResult<OrderDTO>), StatusCodes.Status200OK)]
         public IActionResult GetPaged(
             [FromQuery] string? status,
             [FromQuery] int? userId,
@@ -92,7 +101,10 @@ namespace ClickExpress.Api.Controller
         [Authorize(Roles = "Admin")]
         public IActionResult GetStats() => Ok(_orderActions.GetOrderStatsAction());
 
+        /// <summary>Returns all orders for the currently authenticated user.</summary>
         [HttpGet("my")]
+        [ProducesResponseType(typeof(List<OrderDTO>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public IActionResult GetMy()
         {
             var userId = GetUserId();
@@ -101,6 +113,8 @@ namespace ClickExpress.Api.Controller
         }
 
         [HttpGet("{id}")]
+        [ProducesResponseType(typeof(OrderDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult GetById(int id)
         {
             var order = _orderActions.GetOrderByIdAction(id);
@@ -108,7 +122,11 @@ namespace ClickExpress.Api.Controller
             return Ok(order);
         }
 
+        /// <summary>Create a new order for the current user.</summary>
         [HttpPost]
+        [ProducesResponseType(typeof(OrderDTO), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public IActionResult Create([FromBody] CreateOrderDTO dto)
         {
             var userId = GetUserId();
@@ -125,7 +143,11 @@ namespace ClickExpress.Api.Controller
             return CreatedAtAction(nameof(GetById), new { id = result.Id }, order);
         }
 
+        /// <summary>Convert the current user's cart into orders. Clears the cart on success.</summary>
         [HttpPost("checkout")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public IActionResult Checkout()
         {
             var userId = GetUserId();
@@ -188,7 +210,11 @@ namespace ClickExpress.Api.Controller
             return Ok(_orderActions.GetOrderTrackingAction(id));
         }
 
+        /// <summary>Cancel an order. Only the owning user or Admin may cancel.</summary>
         [HttpPatch("{id}/cancel")]
+        [ProducesResponseType(typeof(OrderDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> CancelOrder(int id)
         {
             var userId = GetUserId();
@@ -206,8 +232,11 @@ namespace ClickExpress.Api.Controller
             return Ok(_orderActions.GetOrderByIdAction(id));
         }
 
+        /// <summary>Admin: update order fields (addresses, dates, driver, vehicle).</summary>
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(OrderDTO), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Update(int id, [FromBody] UpdateOrderDTO dto)
         {
             var result = _orderActions.ResponseUpdateOrderAction(id, dto);

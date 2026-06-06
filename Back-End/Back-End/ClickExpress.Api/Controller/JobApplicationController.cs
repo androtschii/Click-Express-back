@@ -4,6 +4,8 @@ using System.Security.Claims;
 using ClickExpress.BusinessLogic.Interfaces;
 using ClickExpress.BusinessLogic.Helpers;
 using ClickExpress.Domain.Models.JobApplication;
+using ClickExpress.Domain.Models.Base;
+using Microsoft.AspNetCore.Http;
 
 namespace ClickExpress.Api.Controller
 {
@@ -22,8 +24,11 @@ namespace ClickExpress.Api.Controller
             _logger = logger;
         }
 
+        /// <summary>Submit a driver job application. Sends email to both admin and applicant.</summary>
         [HttpPost]
         [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public IActionResult Submit([FromBody] CreateJobApplicationDTO dto)
         {
             var result = _jobApplicationActions.ResponseSubmitJobApplicationAction(dto);
@@ -40,6 +45,7 @@ namespace ClickExpress.Api.Controller
 
         [HttpGet]
         [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(List<JobApplicationDTO>), StatusCodes.Status200OK)]
         public IActionResult GetAll([FromQuery] string? status) => Ok(_jobApplicationActions.GetAllJobApplicationsAction(status));
 
         [HttpGet("{id}")]

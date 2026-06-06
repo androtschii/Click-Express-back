@@ -1,4 +1,5 @@
 ﻿using ClickExpress.DataAccess.Context;
+using ClickExpress.BusinessLogic.Helpers;
 using ClickExpress.Domain.Entities.User;
 using ClickExpress.Domain.Models.User;
 using ClickExpress.Domain.Models.Base;
@@ -23,34 +24,32 @@ namespace ClickExpress.BusinessLogic.Core.User
             }
         }
 
+        // Uses compiled query for GetUserById — this path is called on every admin user CRUD action
         protected UserDTO? ExecuteGetUserByIdAction(int id)
         {
-            using (var db = new UserContext())
+            using var db = new UserContext();
+            var u = CompiledQueries.GetUserById(db, id);
+            if (u == null) return null;
+            return new UserDTO
             {
-                var u = db.Users.FirstOrDefault(u => u.Id == id);
-                if (u == null) return null;
-                return new UserDTO
-                {
-                    Id = u.Id, Username = u.Username, Email = u.Email,
-                    Role = u.Role, CreatedAt = u.CreatedAt, IsActive = u.IsActive,
-                    FullName = u.FullName, Phone = u.Phone, Company = u.Company, Address = u.Address
-                };
-            }
+                Id = u.Id, Username = u.Username, Email = u.Email,
+                Role = u.Role, CreatedAt = u.CreatedAt, IsActive = u.IsActive,
+                FullName = u.FullName, Phone = u.Phone, Company = u.Company, Address = u.Address
+            };
         }
 
+        // Uses compiled query — hot path: called on every authenticated request to resolve current user
         protected UserDTO? ExecuteGetUserByUsernameAction(string username)
         {
-            using (var db = new UserContext())
+            using var db = new UserContext();
+            var u = CompiledQueries.GetUserByUsername(db, username);
+            if (u == null) return null;
+            return new UserDTO
             {
-                var u = db.Users.FirstOrDefault(u => u.Username == username);
-                if (u == null) return null;
-                return new UserDTO
-                {
-                    Id = u.Id, Username = u.Username, Email = u.Email,
-                    Role = u.Role, CreatedAt = u.CreatedAt, IsActive = u.IsActive,
-                    FullName = u.FullName, Phone = u.Phone, Company = u.Company, Address = u.Address
-                };
-            }
+                Id = u.Id, Username = u.Username, Email = u.Email,
+                Role = u.Role, CreatedAt = u.CreatedAt, IsActive = u.IsActive,
+                FullName = u.FullName, Phone = u.Phone, Company = u.Company, Address = u.Address
+            };
         }
 
         protected ResponseAction ExecuteUserCreateAction(UserRegDTO user)
