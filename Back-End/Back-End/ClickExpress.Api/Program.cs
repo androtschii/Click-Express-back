@@ -270,28 +270,17 @@ using (var db = new OrderContext())
 using (var db = new UserContext())
 {
 
-    if (!db.Users.Any())
+    if (!db.Users.Any(u => u.Role == "Admin"))
     {
-        db.Users.AddRange(
-            new ClickExpress.Domain.Entities.User.UserData
-            {
-                Username = "admin",
-                Email = "admin@clickexpress.com",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
-                Role = "Admin",
-                IsActive = true,
-                CreatedAt = DateTime.UtcNow
-            },
-            new ClickExpress.Domain.Entities.User.UserData
-            {
-                Username = "user",
-                Email = "user@clickexpress.com",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("user123"),
-                Role = "User",
-                IsActive = true,
-                CreatedAt = DateTime.UtcNow
-            }
-        );
+        db.Users.Add(new ClickExpress.Domain.Entities.User.UserData
+        {
+            Username = "admin",
+            Email = "admin@clickexpress.com",
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
+            Role = "Admin",
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        });
         db.SaveChanges();
     }
 }
