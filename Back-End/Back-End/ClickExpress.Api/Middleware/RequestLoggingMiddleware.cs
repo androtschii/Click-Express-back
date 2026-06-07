@@ -10,6 +10,14 @@ namespace ClickExpress.Api.Middleware
             "/health/live", "/health/ready", "/favicon.ico"
         };
 
+        private static readonly HashSet<string> _sensitivePaths = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "/api/auth/login",
+            "/api/auth/register",
+            "/api/auth/reset-password",
+            "/api/auth/forgot-password",
+        };
+
         private readonly RequestDelegate _next;
         private readonly ILogger<RequestLoggingMiddleware> _logger;
 
@@ -50,15 +58,32 @@ namespace ClickExpress.Api.Middleware
                           : status >= 400 ? LogLevel.Warning
                           : LogLevel.Information;
 
-                _logger.Log(
-                    level,
-                    "HTTP {Method} {Path} → {Status} in {Ms}ms  uid={UserId}  cid={CorrelationId}",
-                    context.Request.Method,
-                    context.Request.Path.Value,
-                    status,
-                    sw.ElapsedMilliseconds,
-                    userId,
-                    correlationId ?? "-");
+                var path = context.Request.Path.Value;
+                var isSensitive = _sensitivePaths.Contains(path ?? string.Empty);
+
+                if (isSensitive)
+                {
+                    _logger.Log(
+                        level,
+                        "HTTP {Method} {Path} → {Status} in {Ms}ms  cid={CorrelationId}",
+                        context.Request.Method,
+                        path,
+                        status,
+                        sw.ElapsedMilliseconds,
+                        correlationId ?? "-");
+                }
+                else
+                {
+                    _logger.Log(
+                        level,
+                        "HTTP {Method} {Path} → {Status} in {Ms}ms  uid={UserId}  cid={CorrelationId}",
+                        context.Request.Method,
+                        path,
+                        status,
+                        sw.ElapsedMilliseconds,
+                        userId,
+                        correlationId ?? "-");
+                }
             }
         }
     }
