@@ -1,10 +1,11 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using ClickExpress.BusinessLogic.Helpers;
 using ClickExpress.BusinessLogic.Interfaces;
 using ClickExpress.Domain.Models.Product;
 using Microsoft.AspNetCore.Http;
+using ClickExpress.Domain.Models.Base;
 
 namespace ClickExpress.Api.Controller
 {
@@ -57,14 +58,9 @@ namespace ClickExpress.Api.Controller
             if (cached != null) return Ok(cached);
 
             var (items, total) = _productActions.GetAllProductsAction(search, category, minPrice, maxPrice, sortBy, page, pageSize);
-            var response = new
-            {
-                Total = total, Page = page, PageSize = pageSize,
-                TotalPages = (int)Math.Ceiling((double)total / pageSize),
-                Items = items
-            };
-            _cache.Set(cacheKey, (object)response, TimeSpan.FromMinutes(1));
-            return Ok(response);
+            var result = PagedResult<ProductDTO>.Create(items, total, page, pageSize);
+            _cache.Set(cacheKey, (object)result, TimeSpan.FromMinutes(1));
+            return Ok(result);
         }
 
         [HttpGet("{id}")]

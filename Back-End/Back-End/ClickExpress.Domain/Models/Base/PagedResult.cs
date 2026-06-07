@@ -1,4 +1,4 @@
-namespace ClickExpress.Domain.Models.Base
+﻿namespace ClickExpress.Domain.Models.Base
 {
     public class PagedResult<T>
     {
@@ -9,5 +9,13 @@ namespace ClickExpress.Domain.Models.Base
         public int TotalPages => PageSize > 0 ? (int)Math.Ceiling((double)TotalCount / PageSize) : 0;
         public bool HasPreviousPage => Page > 1;
         public bool HasNextPage => Page < TotalPages;
+
+        public static PagedResult<T> Create(List<T> items, int total, int page, int pageSize) => new()
+        {
+            Items = items,
+            TotalCount = total,
+            Page = page,
+            PageSize = pageSize,
+        };
     }
 }
