@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using ClickExpress.Domain.Entities.User;
 using ClickExpress.Domain.Entities.Product;
 using ClickExpress.Domain.Entities.Order;
@@ -164,6 +164,11 @@ namespace ClickExpress.DataAccess.Context
                 .HasIndex(n => n.IsPublished).HasDatabaseName("IX_NewsArticles_IsPublished");
             modelBuilder.Entity<NewsArticleData>()
                 .HasIndex(n => n.PublishedAt).HasDatabaseName("IX_NewsArticles_PublishedAt");
+                .HasIndex(ci => ci.CartId).HasDatabaseName("IX_CartItems_CartId");
+                .HasIndex(r => r.ProductId).HasDatabaseName("IX_Reviews_ProductId");
+                .HasIndex(n => n.AuthorId).HasDatabaseName("IX_NewsArticles_AuthorId");
+                .HasIndex(n => n.CreatedAt).HasDatabaseName("IX_NewsArticles_CreatedAt");
+                .HasIndex(h => h.OrderId).HasDatabaseName("IX_OrderStatusHistories_OrderId");
 
             base.OnModelCreating(modelBuilder);
         }
