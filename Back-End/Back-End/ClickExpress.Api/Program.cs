@@ -1,8 +1,10 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.IO.Compression;
 using System.Text;
 using System.Threading.RateLimiting;
 using ClickExpress.DataAccess;
@@ -86,6 +88,17 @@ builder.Services.AddSwaggerGen(c =>
     });
     c.OrderActionsBy(api => api.RelativePath);
 });
+
+builder.Services.AddResponseCompression(opts =>
+{
+    opts.EnableForHttps = true;
+    opts.Providers.Add<BrotliCompressionProvider>();
+    opts.Providers.Add<GzipCompressionProvider>();
+    opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+        ["application/json", "application/problem+json"]);
+});
+builder.Services.Configure<BrotliCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
+builder.Services.Configure<GzipCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
 
 builder.Services.AddScoped<IUserActions, UserFlow>();
 builder.Services.AddScoped<IProductActions, ProductFlow>();
@@ -295,6 +308,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseResponseCompression();
 app.MapGet("/", () => Results.Redirect("/swagger"));
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();

@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Text.Json;
 
 namespace ClickExpress.Api.Middleware
@@ -24,23 +24,23 @@ namespace ClickExpress.Api.Middleware
             }
             catch (UnauthorizedAccessException ex)
             {
-                _logger.LogWarning(ex, "Unauthorized: {Path}", context.Request.Path);
-                await WriteError(context, HttpStatusCode.Unauthorized, "Unauthorized");
+                _logger.LogWarning(ex, Unauthorized: {Path}, context.Request.Path);
+                await WriteError(context, HttpStatusCode.Unauthorized, Unauthorized);
             }
             catch (KeyNotFoundException ex)
             {
-                _logger.LogWarning(ex, "Not found: {Path}", context.Request.Path);
+                _logger.LogWarning(ex, Not found: {Path}, context.Request.Path);
                 await WriteError(context, HttpStatusCode.NotFound, ex.Message);
             }
             catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Bad request: {Path}", context.Request.Path);
+                _logger.LogWarning(ex, Bad request: {Path}, context.Request.Path);
                 await WriteError(context, HttpStatusCode.BadRequest, ex.Message);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unhandled exception at {Method} {Path}", context.Request.Method, context.Request.Path);
-                var message = _env.IsDevelopment() ? ex.Message : "An unexpected error occurred";
+                _logger.LogError(ex, Unhandled exception at {Method} {Path}, context.Request.Method, context.Request.Path);
+                var message = _env.IsDevelopment() ? ex.Message : An unexpected error occurred;
                 await WriteError(context, HttpStatusCode.InternalServerError, message);
             }
         }
@@ -49,18 +49,19 @@ namespace ClickExpress.Api.Middleware
         {
             if (context.Response.HasStarted) return;
 
-            var correlationId = context.Items.TryGetValue("CorrelationId", out var cid)
+            var correlationId = context.Items.TryGetValue(CorrelationId, out var cid)
                 ? cid?.ToString()
                 : null;
 
-            context.Response.ContentType = "application/json";
+            context.Response.ContentType = application/json;
             context.Response.StatusCode = (int)status;
 
             var payload = JsonSerializer.Serialize(new
             {
                 statusCode = (int)status,
                 message,
-                correlationId
+                correlationId,
+                timestamp = DateTime.UtcNow
             }, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 
             await context.Response.WriteAsync(payload);
