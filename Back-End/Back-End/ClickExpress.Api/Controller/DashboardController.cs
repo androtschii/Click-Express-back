@@ -64,7 +64,7 @@ namespace ClickExpress.Api.Controller
                     NewToday = orders.Count(o => o.CreatedAt.Date == today),
                     TotalRevenue = orders
                         .Where(o => o.Status == "Approved")
-                        .Sum(o => o.TotalPrice),
+                        .Sum(o => o.TotalPrice ?? 0),
                 };
 
                 var reviews = db.Reviews.AsNoTracking().ToList();

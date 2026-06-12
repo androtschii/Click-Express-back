@@ -164,10 +164,14 @@ namespace ClickExpress.DataAccess.Context
                 .HasIndex(n => n.IsPublished).HasDatabaseName("IX_NewsArticles_IsPublished");
             modelBuilder.Entity<NewsArticleData>()
                 .HasIndex(n => n.PublishedAt).HasDatabaseName("IX_NewsArticles_PublishedAt");
-                .HasIndex(ci => ci.CartId).HasDatabaseName("IX_CartItems_CartId");
-                .HasIndex(r => r.ProductId).HasDatabaseName("IX_Reviews_ProductId");
+            modelBuilder.Entity<NewsArticleData>()
                 .HasIndex(n => n.AuthorId).HasDatabaseName("IX_NewsArticles_AuthorId");
-                .HasIndex(n => n.CreatedAt).HasDatabaseName("IX_NewsArticles_CreatedAt");
+
+            modelBuilder.Entity<CartItemData>()
+                .HasIndex(ci => ci.CartId).HasDatabaseName("IX_CartItems_CartId");
+            modelBuilder.Entity<ReviewData>()
+                .HasIndex(r => r.ProductId).HasDatabaseName("IX_Reviews_ProductId");
+            modelBuilder.Entity<OrderStatusHistoryData>()
                 .HasIndex(h => h.OrderId).HasDatabaseName("IX_OrderStatusHistories_OrderId");
 
             base.OnModelCreating(modelBuilder);

@@ -33,17 +33,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 DbSession.ConnectionStrings = builder.Configuration.GetConnectionString("DefaultConnection")!;
 
-builder.Services.AddResponseCompression(opts =>
-{
-    opts.EnableForHttps = true;
-    opts.Providers.Add<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProvider>();
-    opts.Providers.Add<Microsoft.AspNetCore.ResponseCompression.GzipCompressionProvider>();
-    opts.MimeTypes = Microsoft.AspNetCore.ResponseCompression.ResponseCompressionDefaults.MimeTypes
-        .Append("application/json");
-});
-builder.Services.Configure<Microsoft.AspNetCore.ResponseCompression.BrotliCompressionProviderOptions>(o =>
-    o.Level = System.IO.Compression.CompressionLevel.Fastest);
-
 builder.Services.AddControllers()
     .AddFluentValidation(fv =>
     {
@@ -161,10 +150,21 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins(allowedOrigins)
-              .AllowAnyHeader()
+        policy.AllowAnyHeader()
               .WithMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
-              .AllowCredentials(); // required for SignalR WebSocket handshake
+              .AllowCredentials() // required for SignalR WebSocket handshake
+              // In Development any localhost port is allowed (Vite may fall back 5173→5174→…);
+              // in Production only the explicitly configured origins are accepted.
+              .SetIsOriginAllowed(origin =>
+              {
+                  if (builder.Environment.IsDevelopment())
+                  {
+                      if (Uri.TryCreate(origin, UriKind.Absolute, out var uri) &&
+                          (uri.Host == "localhost" || uri.Host == "127.0.0.1"))
+                          return true;
+                  }
+                  return allowedOrigins.Contains(origin);
+              });
     });
 });
 
@@ -313,8 +313,6 @@ app.MapGet("/", () => Results.Redirect("/swagger"));
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseMiddleware<ExceptionMiddleware>();
-app.UseMiddleware<CorrelationIdMiddleware>();
-app.UseMiddleware<RequestLoggingMiddleware>();
 
 app.Use(async (context, next) =>
 {
@@ -326,7 +324,6 @@ app.Use(async (context, next) =>
     await next();
 });
 
-app.UseResponseCompression();
 if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 app.UseStaticFiles();
