@@ -103,6 +103,7 @@ builder.Services.AddScoped<ISavedLoadActions, SavedLoadFlow>();
 builder.Services.AddScoped<INotificationActions, NotificationFlow>();
 builder.Services.AddSingleton<IEmailService, SmtpEmailService>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+builder.Services.AddHttpClient();
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ICacheService, CacheService>();
 builder.Services.AddSingleton<IBackgroundQueue, BackgroundQueue>();
@@ -235,6 +236,14 @@ builder.Services.AddRateLimiter(options =>
 
 var app = builder.Build();
 
+// OrderContext is the full-schema context (Users, Products, Orders, Reviews, …).
+// Create it first so a brand-new database gets every table before the raw-SQL
+// migrations below run; EnsureCreated is a no-op once the database exists.
+using (var db = new OrderContext())
+{
+    db.Database.EnsureCreated();
+}
+
 using (var db = new UserContext())
 {
     db.Database.EnsureCreated();
@@ -267,6 +276,12 @@ using (var db = new OrderContext())
             ALTER TABLE Drivers ADD IsDeleted BIT NOT NULL DEFAULT 0;
         IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Drivers' AND COLUMN_NAME='DeletedAt')
             ALTER TABLE Drivers ADD DeletedAt DATETIME2 NULL;
+        IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Users' AND COLUMN_NAME='Provider')
+            ALTER TABLE Users ADD Provider NVARCHAR(20) NOT NULL DEFAULT 'local';
+        IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Users' AND COLUMN_NAME='ProviderId')
+            ALTER TABLE Users ADD ProviderId NVARCHAR(255) NULL;
+        IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='Users' AND COLUMN_NAME='PasswordHash' AND IS_NULLABLE='NO')
+            ALTER TABLE Users ALTER COLUMN PasswordHash NVARCHAR(MAX) NULL;
         IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='AuditLogs' AND xtype='U')
         CREATE TABLE AuditLogs (
             Id INT IDENTITY(1,1) PRIMARY KEY,

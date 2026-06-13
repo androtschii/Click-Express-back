@@ -14,6 +14,7 @@ namespace ClickExpress.BusinessLogic.Interfaces
         ResponseMsg ResponseUserActivateAction(UserActivateDTO user);
         ResponseMsg ResponseUserDeleteAction(int id);
         ResponseAction ResponseValidateLoginAction(UserAuthDTO user);
+        ResponseAction ResponseGetOrCreateExternalUserAction(string provider, string providerId, string email, string? name);
         ResponseMsg ResponseSaveRefreshTokenAction(int userId, string token, DateTime expiry);
         UserDTO? GetUserByRefreshTokenAction(string token);
     }

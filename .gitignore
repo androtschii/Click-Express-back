@@ -26,3 +26,7 @@ build/
 
 # Claude
 .claude/
+
+# Local secrets & machine-specific config (never commit keys / connection strings)
+appsettings.Development.json
+appsettings.*.Local.json

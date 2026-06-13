@@ -16,6 +16,7 @@ namespace ClickExpress.BusinessLogic.Functions.User
         public ResponseMsg ResponseUserActivateAction(UserActivateDTO user) => ExecuteUserActivateAction(user);
         public ResponseMsg ResponseUserDeleteAction(int id) => ExecuteUserDeleteAction(id);
         public ResponseAction ResponseValidateLoginAction(UserAuthDTO user) => ExecuteValidateLoginAction(user);
+        public ResponseAction ResponseGetOrCreateExternalUserAction(string provider, string providerId, string email, string? name) => ExecuteGetOrCreateExternalUserAction(provider, providerId, email, name);
         public ResponseMsg ResponseSaveRefreshTokenAction(int userId, string token, DateTime expiry) => ExecuteSaveRefreshTokenAction(userId, token, expiry);
         public UserDTO? GetUserByRefreshTokenAction(string token) => ExecuteGetUserByRefreshTokenAction(token);
     }

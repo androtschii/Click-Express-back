@@ -171,10 +171,65 @@ namespace ClickExpress.BusinessLogic.Core.User
             using (var db = new UserContext())
             {
                 var existing = db.Users.FirstOrDefault(u => u.Username == user.Username && u.IsActive);
-                if (existing == null || !VerifyPassword(user.Password, existing.PasswordHash))
+                // PasswordHash is null for social-login accounts — they can't sign in with a password.
+                if (existing == null || existing.PasswordHash == null || !VerifyPassword(user.Password, existing.PasswordHash))
                     return new ResponseAction { IsSuccess = false, Message = "Invalid username or password!" };
 
                 return new ResponseAction { IsSuccess = true, Message = "Login successful!", Id = existing.Id };
+            }
+        }
+
+        // Find a user by external provider id (or link/return an existing account with the same email),
+        // creating a new social-login account when none exists. Used by Google/Facebook sign-in.
+        protected ResponseAction ExecuteGetOrCreateExternalUserAction(string provider, string providerId, string email, string? name)
+        {
+            if (string.IsNullOrWhiteSpace(email) || !email.Contains("@"))
+                return new ResponseAction { IsSuccess = false, Message = "A valid email is required from the provider!" };
+
+            using (var db = new UserContext())
+            {
+                var emailLower = email.ToLower();
+                var existing = db.Users.FirstOrDefault(u =>
+                    (u.Provider == provider && u.ProviderId == providerId) || u.Email.ToLower() == emailLower);
+
+                if (existing != null)
+                {
+                    if (!existing.IsActive)
+                        return new ResponseAction { IsSuccess = false, Message = "This account is deactivated." };
+
+                    // Link the provider to a pre-existing (e.g. local) account that signed up with the same email.
+                    if (existing.ProviderId == null)
+                    {
+                        existing.Provider = provider;
+                        existing.ProviderId = providerId;
+                        if (string.IsNullOrEmpty(existing.FullName)) existing.FullName = name;
+                        db.SaveChanges();
+                    }
+                    return new ResponseAction { IsSuccess = true, Message = "Existing user", Id = existing.Id };
+                }
+
+                // Derive a unique username from the email local-part.
+                var baseName = email.Split('@')[0];
+                var username = baseName;
+                int suffix = 1;
+                while (db.Users.Any(u => u.Username == username))
+                    username = $"{baseName}{suffix++}";
+
+                var newUser = new UserData
+                {
+                    Username = username,
+                    Email = email,
+                    PasswordHash = null,
+                    Provider = provider,
+                    ProviderId = providerId,
+                    FullName = name,
+                    Role = "User",
+                    CreatedAt = DateTime.UtcNow,
+                    IsActive = true
+                };
+                db.Users.Add(newUser);
+                db.SaveChanges();
+                return new ResponseAction { IsSuccess = true, Message = "User created", Id = newUser.Id };
             }
         }
 

@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using System.Security.Claims;
+using System.Net.Http.Json;
+using System.Text.Json.Serialization;
 using ClickExpress.BusinessLogic.Helpers;
 using ClickExpress.BusinessLogic.Interfaces;
 using ClickExpress.DataAccess.Context;
@@ -20,9 +22,11 @@ namespace ClickExpress.Api.Controller
         private readonly IBackgroundQueue _queue;
         private readonly ILogger<AuthController> _logger;
         private readonly IAuditLogService _audit;
+        private readonly IHttpClientFactory _httpClientFactory;
 
         public AuthController(IConfiguration config, IUserActions userActions, IEmailService email,
-            IBackgroundQueue queue, ILogger<AuthController> logger, IAuditLogService audit)
+            IBackgroundQueue queue, ILogger<AuthController> logger, IAuditLogService audit,
+            IHttpClientFactory httpClientFactory)
         {
             _config = config;
             _userActions = userActions;
@@ -30,6 +34,7 @@ namespace ClickExpress.Api.Controller
             _queue = queue;
             _logger = logger;
             _audit = audit;
+            _httpClientFactory = httpClientFactory;
         }
 
         /// <summary>Returns the currently authenticated user's profile.</summary>
@@ -103,6 +108,69 @@ namespace ClickExpress.Api.Controller
 
             _logger.LogInformation("New user registered: {Username}", user.Username);
             _audit.Log("Register", "Auth", user.Id, user.Username);
+            return Ok(new { token, refreshToken = refresh, username = user.Username, role = user.Role });
+        }
+
+        /// <summary>Sign in with a Google OAuth access token. Verifies the token, then finds or creates the user.</summary>
+        [HttpPost("google")]
+        [EnableRateLimiting("auth")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> GoogleLogin([FromBody] GoogleAuthRequest req)
+        {
+            if (string.IsNullOrWhiteSpace(req.AccessToken))
+                return BadRequest(new { message = "Access token is required" });
+
+            var http = _httpClientFactory.CreateClient();
+
+            // 1. Verify the token really belongs to OUR app (guards against confused-deputy:
+            //    a token minted for a different Google client must not be accepted here).
+            var expectedClientId = _config["Google:ClientId"];
+            GoogleTokenInfo? tokenInfo;
+            try
+            {
+                tokenInfo = await http.GetFromJsonAsync<GoogleTokenInfo>(
+                    $"https://oauth2.googleapis.com/tokeninfo?access_token={Uri.EscapeDataString(req.AccessToken)}");
+            }
+            catch
+            {
+                return Unauthorized(new { message = "Invalid Google token" });
+            }
+
+            if (tokenInfo == null)
+                return Unauthorized(new { message = "Invalid Google token" });
+            if (!string.IsNullOrEmpty(expectedClientId) && tokenInfo.Aud != expectedClientId)
+                return Unauthorized(new { message = "Google token was issued for a different application" });
+
+            // 2. Fetch the verified profile (email/name/sub).
+            http.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", req.AccessToken);
+            GoogleUserInfo? profile;
+            try
+            {
+                profile = await http.GetFromJsonAsync<GoogleUserInfo>("https://www.googleapis.com/oauth2/v3/userinfo");
+            }
+            catch
+            {
+                return Unauthorized(new { message = "Failed to fetch Google profile" });
+            }
+
+            if (profile == null || string.IsNullOrEmpty(profile.Email))
+                return Unauthorized(new { message = "Google profile did not include an email" });
+
+            var result = _userActions.ResponseGetOrCreateExternalUserAction("google", profile.Sub, profile.Email, profile.Name);
+            if (!result.IsSuccess)
+                return BadRequest(new { message = result.Message });
+
+            var user = _userActions.GetUserByIdAction(result.Id)!;
+            var token = TokenHelper.GenerateJwtToken(user.Username, user.Role,
+                _config["Jwt:Key"]!, _config["Jwt:Issuer"]!, _config["Jwt:Audience"]!);
+            var refresh = TokenHelper.GenerateRefreshToken();
+            _userActions.ResponseSaveRefreshTokenAction(user.Id, refresh, DateTime.UtcNow.AddDays(7));
+
+            _logger.LogInformation("User {Username} logged in via Google", user.Username);
+            _audit.Log("LoginGoogle", "Auth", user.Id, user.Username);
             return Ok(new { token, refreshToken = refresh, username = user.Username, role = user.Role });
         }
 
@@ -207,6 +275,9 @@ namespace ClickExpress.Api.Controller
                 var u = db.Users.FirstOrDefault(u => u.Username == username && u.IsActive);
                 if (u == null) return Unauthorized();
 
+                if (u.PasswordHash == null)
+                    return BadRequest(new { message = "This account uses social login and has no password" });
+
                 if (!BCrypt.Net.BCrypt.Verify(req.CurrentPassword, u.PasswordHash))
                     return BadRequest(new { message = "Current password is incorrect" });
 
@@ -260,4 +331,17 @@ namespace ClickExpress.Api.Controller
     public class ForgotPasswordRequest { public string Email { get; set; } = ""; }
     public class ResetPasswordRequest { public string Token { get; set; } = ""; public string NewPassword { get; set; } = ""; }
     public class ChangePasswordRequest { public string CurrentPassword { get; set; } = ""; public string NewPassword { get; set; } = ""; }
+    public class GoogleAuthRequest { public string AccessToken { get; set; } = ""; }
+
+    // Shapes for Google's tokeninfo + userinfo endpoints.
+    public class GoogleTokenInfo
+    {
+        [JsonPropertyName("aud")] public string Aud { get; set; } = "";
+    }
+    public class GoogleUserInfo
+    {
+        [JsonPropertyName("sub")] public string Sub { get; set; } = "";
+        [JsonPropertyName("email")] public string Email { get; set; } = "";
+        [JsonPropertyName("name")] public string? Name { get; set; }
+    }
 }
